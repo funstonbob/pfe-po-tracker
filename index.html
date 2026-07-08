@@ -363,6 +363,12 @@
     .brand h1 { font-size: 21px; }
     .head-right { align-items: flex-start; }
     .meta { text-align: left; }
+    /* Fixed-width columns only make sense once there's enough room to give each one a
+       readable share (desktop). On a phone, 12 columns can't all be readable at any fixed
+       width, so fall back to natural sizing + horizontal scroll instead of illegible cells. */
+    table { table-layout: auto; min-width: 1040px; }
+    thead th { white-space: nowrap; }
+    .items-cell, .notes-cell { max-width: 220px; }
   }
 </style>
 </head>
