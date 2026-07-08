@@ -1,0 +1,782 @@
+<title>PFE Purchase Order Tracker · GenRock</title>
+<style>
+  :root {
+    --bg: #f1efe7;
+    --surface: #ffffff;
+    --surface-alt: #eae6da;
+    --border: #ddd7c8;
+    --text: #23211b;
+    --text-muted: #726c5c;
+    --accent: #a94e1c;
+    --accent-soft: #f0d9c8;
+    --st-invoiced: #2f7d5c;
+    --st-invoiced-bg: #e2efe8;
+    --st-transit: #33689c;
+    --st-transit-bg: #e1eaf3;
+    --st-fab: #a8760f;
+    --st-fab-bg: #f4ecd8;
+    --st-wait: #6b6558;
+    --st-wait-bg: #ece8dc;
+    --st-cancel: #9a4a44;
+    --st-cancel-bg: #f2e2df;
+    --overdue: #b23a2e;
+    --shadow: 0 1px 2px rgba(35,33,27,0.06), 0 8px 24px -12px rgba(35,33,27,0.18);
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --bg: #15171a;
+      --surface: #1c1f23;
+      --surface-alt: #22262b;
+      --border: #2d3136;
+      --text: #ece9e1;
+      --text-muted: #9b968a;
+      --accent: #e08a4f;
+      --accent-soft: #3a2a1e;
+      --st-invoiced: #5fc79a;
+      --st-invoiced-bg: #1c2f27;
+      --st-transit: #7cb0e8;
+      --st-transit-bg: #1c2733;
+      --st-fab: #e0b558;
+      --st-fab-bg: #332a17;
+      --st-wait: #b3ada0;
+      --st-wait-bg: #24272c;
+      --st-cancel: #e08a83;
+      --st-cancel-bg: #332020;
+      --overdue: #e5695a;
+      --shadow: 0 1px 2px rgba(0,0,0,0.3), 0 8px 24px -12px rgba(0,0,0,0.5);
+    }
+  }
+  :root[data-theme="dark"] {
+    --bg: #15171a; --surface: #1c1f23; --surface-alt: #22262b; --border: #2d3136;
+    --text: #ece9e1; --text-muted: #9b968a; --accent: #e08a4f; --accent-soft: #3a2a1e;
+    --st-invoiced: #5fc79a; --st-invoiced-bg: #1c2f27; --st-transit: #7cb0e8; --st-transit-bg: #1c2733;
+    --st-fab: #e0b558; --st-fab-bg: #332a17; --st-wait: #b3ada0; --st-wait-bg: #24272c;
+    --st-cancel: #e08a83; --st-cancel-bg: #332020; --overdue: #e5695a;
+    --shadow: 0 1px 2px rgba(0,0,0,0.3), 0 8px 24px -12px rgba(0,0,0,0.5);
+  }
+  :root[data-theme="light"] {
+    --bg: #f1efe7; --surface: #ffffff; --surface-alt: #eae6da; --border: #ddd7c8;
+    --text: #23211b; --text-muted: #726c5c; --accent: #a94e1c; --accent-soft: #f0d9c8;
+    --st-invoiced: #2f7d5c; --st-invoiced-bg: #e2efe8; --st-transit: #33689c; --st-transit-bg: #e1eaf3;
+    --st-fab: #a8760f; --st-fab-bg: #f4ecd8; --st-wait: #6b6558; --st-wait-bg: #ece8dc;
+    --st-cancel: #9a4a44; --st-cancel-bg: #f2e2df; --overdue: #b23a2e;
+    --shadow: 0 1px 2px rgba(35,33,27,0.06), 0 8px 24px -12px rgba(35,33,27,0.18);
+  }
+
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    background: var(--bg);
+    color: var(--text);
+    font-family: -apple-system, "Segoe UI", "Segoe UI Variable", Roboto, "Helvetica Neue", "PingFang SC", "Microsoft YaHei", Arial, sans-serif;
+    -webkit-font-smoothing: antialiased;
+  }
+  .num { font-variant-numeric: tabular-nums; font-family: ui-monospace, "Cascadia Mono", "SFMono-Regular", Consolas, monospace; }
+
+  .page { max-width: 1280px; margin: 0 auto; padding: 28px 24px 64px; }
+
+  header.top {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 16px;
+    flex-wrap: wrap;
+    padding-bottom: 18px;
+    border-bottom: 2px solid var(--accent);
+    margin-bottom: 20px;
+  }
+  .brand { display: flex; flex-direction: column; gap: 2px; }
+  .brand .mark {
+    font-size: 12px;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    color: var(--accent);
+    font-weight: 700;
+  }
+  .brand h1 {
+    margin: 0;
+    font-size: 26px;
+    font-weight: 700;
+    letter-spacing: -0.01em;
+    text-wrap: balance;
+  }
+  .brand .sub { color: var(--text-muted); font-size: 13.5px; }
+  .head-right { display: flex; flex-direction: column; align-items: flex-end; gap: 10px; }
+  .meta {
+    text-align: right;
+    font-size: 12.5px;
+    color: var(--text-muted);
+    line-height: 1.6;
+  }
+  .meta strong { color: var(--text); font-variant-numeric: tabular-nums; }
+
+  .lang-toggle {
+    display: inline-flex;
+    border: 1px solid var(--border);
+    border-radius: 999px;
+    padding: 3px;
+    background: var(--surface);
+    gap: 2px;
+  }
+  .lang-toggle button {
+    border: none;
+    background: transparent;
+    color: var(--text-muted);
+    font-size: 12.5px;
+    font-weight: 700;
+    padding: 5px 14px;
+    border-radius: 999px;
+    cursor: pointer;
+    font-family: inherit;
+  }
+  .lang-toggle button[aria-selected="true"] {
+    background: var(--accent);
+    color: #fff;
+  }
+
+  .attention {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 14px;
+    margin-bottom: 22px;
+  }
+  .attn-card {
+    min-width: 0;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    box-shadow: var(--shadow);
+    padding: 14px 16px 6px;
+  }
+  .attn-card.critical {
+    border-color: var(--overdue);
+    box-shadow: 0 0 0 1px var(--overdue) inset, var(--shadow);
+  }
+  .attn-card h2 {
+    margin: 0 0 2px;
+    font-size: 14px;
+    font-weight: 700;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+  .attn-card .dot { width: 9px; height: 9px; border-radius: 50%; flex: none; }
+  .attn-card .dot.critical { background: var(--overdue); box-shadow: 0 0 0 3px var(--st-cancel-bg); }
+  .attn-card .dot.eta { background: var(--overdue); }
+  .attn-card .dot.drawings { background: var(--st-fab); }
+  .attn-card .dot.shipping { background: var(--st-transit); }
+  .attn-card .attn-sub { margin: 0 0 10px; font-size: 12px; color: var(--text-muted); }
+  .attn-list { list-style: none; margin: 0; padding: 0; max-height: 260px; overflow-y: auto; }
+  .attn-list li {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    padding: 8px 0;
+    border-top: 1px solid var(--border);
+    font-size: 12.5px;
+    cursor: pointer;
+  }
+  .attn-list li:hover .attn-po { text-decoration: underline; }
+  .attn-row1 { display: flex; justify-content: space-between; align-items: baseline; gap: 10px; }
+  .attn-po { font-family: ui-monospace, "Cascadia Mono", "SFMono-Regular", Consolas, monospace; font-weight: 700; color: var(--text); }
+  .attn-detail { display: block; color: var(--text-muted); white-space: normal; line-height: 1.35; overflow-wrap: break-word; }
+  .attn-flag { flex: none; font-size: 11px; font-weight: 700; color: var(--text-muted); white-space: nowrap; }
+  .attn-flag.warn { color: var(--overdue); }
+  .attn-empty { padding: 14px 0; color: var(--text-muted); font-size: 12.5px; }
+
+  .toolbar {
+    display: flex;
+    gap: 10px;
+    align-items: center;
+    flex-wrap: wrap;
+    margin-bottom: 14px;
+  }
+  .toolbar input[type="search"] {
+    flex: 1 1 240px;
+    min-width: 180px;
+    padding: 9px 12px;
+    border-radius: 8px;
+    border: 1px solid var(--border);
+    background: var(--surface);
+    color: var(--text);
+    font-size: 14px;
+    font-family: inherit;
+  }
+  .toolbar input[type="search"]:focus {
+    outline: 2px solid var(--accent);
+    outline-offset: 1px;
+  }
+  .chip {
+    padding: 6px 12px;
+    border-radius: 999px;
+    border: 1px solid var(--border);
+    background: var(--surface);
+    color: var(--text-muted);
+    font-size: 12.5px;
+    font-weight: 600;
+    cursor: pointer;
+    user-select: none;
+    white-space: nowrap;
+    font-family: inherit;
+  }
+  .chip:hover { border-color: var(--accent); color: var(--text); }
+  .chip.active { background: var(--accent); border-color: var(--accent); color: #fff; }
+  .chip .n { opacity: 0.75; font-weight: 500; margin-left: 3px; }
+
+  .table-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    box-shadow: var(--shadow);
+    overflow: hidden;
+  }
+  .table-scroll { overflow-x: auto; max-height: 74vh; }
+  table { border-collapse: collapse; width: 100%; table-layout: fixed; font-size: 13px; }
+  thead th {
+    position: sticky;
+    top: 0;
+    z-index: 2;
+    background: var(--surface-alt);
+    text-align: left;
+    font-size: 10.5px;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+    color: var(--text-muted);
+    font-weight: 700;
+    padding: 10px 10px;
+    border-bottom: 1px solid var(--border);
+    white-space: normal;
+    line-height: 1.3;
+    overflow-wrap: break-word;
+  }
+  th.sortable { cursor: pointer; }
+  th.sortable:hover { color: var(--text); }
+  th .arrow { opacity: 0.4; margin-left: 3px; font-size: 10px; }
+  th.sorted .arrow { opacity: 1; color: var(--accent); }
+
+  tbody td {
+    padding: 9px 10px;
+    border-bottom: 1px solid var(--border);
+    vertical-align: top;
+    color: var(--text);
+    overflow-wrap: break-word;
+    word-break: break-word;
+  }
+  tbody tr:nth-child(even) { background: var(--surface-alt); }
+  tbody tr:hover { background: var(--accent-soft); }
+  tbody tr td:first-child { border-left: 3px solid transparent; }
+  tbody tr.flag-shipping td:first-child { border-left-color: var(--st-transit); }
+  tbody tr.flag-drawings td:first-child { border-left-color: var(--st-fab); }
+  tbody tr.flag-critical td:first-child { border-left-color: var(--overdue); border-left-width: 4px; }
+  tbody tr.flag-critical { background: color-mix(in srgb, var(--overdue) 7%, transparent); }
+  tbody tr.row-target { animation: pulse-target 1.6s ease-out 2; }
+  @keyframes pulse-target { 0%, 100% { background: transparent; } 50% { background: var(--accent-soft); } }
+
+  .muted { color: var(--text-muted); }
+  .notes-cell, .items-cell {
+    cursor: help;
+    line-clamp: 4;
+    -webkit-line-clamp: 4;
+    display: -webkit-box;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+  }
+  .notes-cell { white-space: pre-wrap; font-size: 12.5px; color: var(--text-muted); }
+  .items-cell { white-space: pre-wrap; }
+
+  .pill {
+    display: inline-block;
+    padding: 3px 9px;
+    border-radius: 999px;
+    font-size: 11.5px;
+    font-weight: 700;
+    white-space: nowrap;
+    cursor: help;
+  }
+  .weeks {
+    font-size: 12px;
+    font-weight: 600;
+  }
+  .weeks.overdue { color: var(--overdue); }
+
+  .eta-flag {
+    display: inline-block;
+    margin-left: 5px;
+    font-size: 10.5px;
+    font-weight: 700;
+    letter-spacing: 0.02em;
+    padding: 1px 6px;
+    border-radius: 999px;
+    vertical-align: middle;
+    cursor: help;
+    color: var(--st-fab);
+    background: var(--st-fab-bg);
+  }
+  .eta-flag.warn { color: var(--overdue); background: var(--st-cancel-bg); }
+
+  .empty-state {
+    padding: 48px 12px;
+    text-align: center;
+    color: var(--text-muted);
+    font-size: 13.5px;
+  }
+
+  footer {
+    margin-top: 18px;
+    display: flex;
+    justify-content: space-between;
+    flex-wrap: wrap;
+    gap: 8px;
+    color: var(--text-muted);
+    font-size: 12px;
+  }
+
+  @media (max-width: 980px) {
+    .attention { grid-template-columns: 1fr 1fr; }
+  }
+  @media (max-width: 640px) {
+    .attention { grid-template-columns: 1fr; }
+  }
+  @media (max-width: 640px) {
+    .page { padding: 18px 14px 48px; }
+    .brand h1 { font-size: 21px; }
+    .head-right { align-items: flex-start; }
+    .meta { text-align: left; }
+  }
+</style>
+
+<div class="page">
+  <header class="top">
+    <div class="brand">
+      <span class="mark">GenRock</span>
+      <h1 data-i18n="title">PFE Purchase Order Tracker</h1>
+      <span class="sub" data-i18n="subtitle">Live status of every open and recent order placed with PFE</span>
+    </div>
+    <div class="head-right">
+      <div class="lang-toggle" role="tablist" aria-label="Language">
+        <button type="button" role="tab" data-lang="en" aria-selected="true">EN</button>
+        <button type="button" role="tab" data-lang="zh" aria-selected="false">中文</button>
+      </div>
+      <div class="meta">
+        <div><strong id="rowCount">112</strong> <span data-i18n="ordersOnFile">orders on file</span></div>
+        <div><span data-i18n="lastRefreshedLabel">Last refreshed</span> 08 Jul 2026, 12:59</div>
+        <div data-i18n="autoRefresh">Refreshes automatically each morning</div>
+      </div>
+    </div>
+  </header>
+
+  <div class="attention">
+    <div class="attn-card critical">
+      <h2><span class="dot critical"></span><span data-i18n="cardCriticalTitle">Critical</span> (<span id="criticalCount">0</span>)</h2>
+      <p class="attn-sub" data-i18n="cardCriticalSub">4+ weeks with no drawings, or 8+ weeks not yet shipped with no dispatch date</p>
+      <ul class="attn-list" id="criticalList"></ul>
+    </div>
+    <div class="attn-card">
+      <h2><span class="dot eta"></span><span data-i18n="cardEtaTitle">PFE ETA Needed</span> (<span id="etaCount">0</span>)</h2>
+      <p class="attn-sub" data-i18n="cardEtaSub">Raised 2+ weeks ago, still no ETA back from PFE</p>
+      <ul class="attn-list" id="etaList"></ul>
+    </div>
+    <div class="attn-card">
+      <h2><span class="dot drawings"></span><span data-i18n="cardDrawingsTitle">Awaiting Drawings</span> (<span id="drawingsCount">0</span>)</h2>
+      <p class="attn-sub" data-i18n="cardDrawingsSub">Any ETA given here is provisional until drawings are done</p>
+      <ul class="attn-list" id="drawingsList"></ul>
+    </div>
+    <div class="attn-card">
+      <h2><span class="dot shipping"></span><span data-i18n="cardShippingTitle">Confirmed Shipping Updates</span> (<span id="shippingCount">0</span>)</h2>
+      <p class="attn-sub" data-i18n="cardShippingSub">Open orders with a shipping confirmation logged</p>
+      <ul class="attn-list" id="shippingList"></ul>
+    </div>
+  </div>
+
+  <div class="toolbar">
+    <input type="search" id="search" data-i18n-ph="searchPlaceholder" placeholder="Search PO number, client, item, reference…" autocomplete="off" />
+    <button class="chip active" data-status="__open__"><span data-i18n="chipOpen">Open (not invoiced)</span> <span class="n" id="count-open"></span></button>
+    <button class="chip" data-status="__all__"><span data-i18n="chipAll">All</span> <span class="n" id="count-all"></span></button>
+    <button class="chip" data-status="Invoiced"><span data-i18n="chipInvoiced">Invoiced</span> <span class="n" id="count-invoiced"></span></button>
+    <button class="chip" data-status="In Transit"><span data-i18n="chipTransit">In Transit</span> <span class="n" id="count-transit"></span></button>
+    <button class="chip" data-status="Currently Being Fabricated"><span data-i18n="chipFab">Fabricating</span> <span class="n" id="count-fab"></span></button>
+    <button class="chip" data-status="Awaiting Drawings"><span data-i18n="chipDrawings">Awaiting Drawings</span> <span class="n" id="count-drawings"></span></button>
+  </div>
+
+  <div class="table-card">
+    <div class="table-scroll">
+      <table>
+        <colgroup>
+          <col style="width:7%">
+          <col style="width:7%">
+          <col style="width:6%">
+          <col style="width:9%">
+          <col style="width:8%">
+          <col style="width:8%">
+          <col style="width:9%">
+          <col style="width:7%">
+          <col style="width:16%">
+          <col style="width:7%">
+          <col style="width:10%">
+          <col style="width:6%">
+        </colgroup>
+        <thead>
+          <tr>
+            <th data-i18n="thPO">PO Number</th>
+            <th class="sortable" data-key="Date"><span data-i18n="thDate">PO Date</span> <span class="arrow">▾</span></th>
+            <th data-i18n="thWeeks">Weeks Open</th>
+            <th data-i18n="thStatus">Status</th>
+            <th data-i18n="thETA">PFE ETA</th>
+            <th data-i18n="thCED">Client Expected Delivery</th>
+            <th data-i18n="thShipping">Confirmed Shipping / Update</th>
+            <th data-i18n="thClient">Client</th>
+            <th data-i18n="thItems">Items</th>
+            <th data-i18n="thRef">Reference</th>
+            <th data-i18n="thNotes">PFE Notes</th>
+            <th data-i18n="thInvoiced">Date Invoiced</th>
+          </tr>
+        </thead>
+        <tbody id="rows"></tbody>
+      </table>
+      <div class="empty-state" id="emptyState" style="display:none;" data-i18n="emptyState">No orders match your search.</div>
+    </div>
+  </div>
+
+  <footer>
+    <span data-i18n="footerLeft">GenRock Trading Pty Ltd — for supplier reference only</span>
+    <span id="footerRight">112 PFE orders shown of full PO Tracker</span>
+  </footer>
+</div>
+
+<script id="po-data" type="application/json">[{"Date": "25 Jun 2026", "How many weeks since order": "1 weeks", "PO Number": "PO-0305", "Reference ": "3003273938", "Client": "Boddington", "Items": "SPOOL No: 430-SPL-3-005 - DN650 - 6m long - 25mm", "Client Expected Delivery Date": "25/09/2026", "PFE ETA": "2026/8/29", "Status": "Currently Being Fabricated", "Confirmed Shipping Date": "", "PFE Notes": "Customer Approved TQ", "Date Invoiced": "", "Supplier": "PFE"}, {"Date": "23 Jun 2026", "How many weeks since order": "2 weeks", "PO Number": "PO-0304", "Reference ": "7500161469", "Client": "Tronox", "Items": "WO 20062054 Trommel spray bars hangers gaskets and fasteners", "Client Expected Delivery Date": "10/09/2026", "PFE ETA": "2026/8/29", "Status": "Currently Being Fabricated", "Confirmed Shipping Date": "", "PFE Notes": "", "Date Invoiced": "", "Supplier": "PFE"}, {"Date": "22 Jun 2026", "How many weeks since order": "2 weeks", "PO Number": "PO-0301", "Reference ": "295891", "Client": "Evolution", "Items": "Area 30 Suction and Discharge - 10 Pipes - Linatex and Ceramic  PFE to Review 3D Scann Data", "Client Expected Delivery Date": "08/09/2026", "PFE ETA": "2026/8/29", "Status": "Awaiting Drawings", "Confirmed Shipping Date": "", "PFE Notes": "PFE to Review 3D Scann Data", "Date Invoiced": "", "Supplier": "PFE"}, {"Date": "22 Jun 2026", "How many weeks since order": "2 weeks", "PO Number": "PO-0302", "Reference ": "7500161304", "Client": "Tronox", "Items": "Drawings 003-P-287 Launder in Drawing 003-P-270, including the supply and pre-fitment of the wear plate identified in Detail 2", "Client Expected Delivery Date": "16/09/2026", "PFE ETA": "2026/8/29", "Status": "Currently Being Fabricated", "Confirmed Shipping Date": "", "PFE Notes": "", "Date Invoiced": "", "Supplier": "PFE"}, {"Date": "22 Jun 2026", "How many weeks since order": "2 weeks", "PO Number": "PO-0303", "Reference ": "7500161309", "Client": "Tronox", "Items": "B side tails launder Quote QU-1284", "Client Expected Delivery Date": "10/09/2026", "PFE ETA": "2026/8/29", "Status": "Currently Being Fabricated", "Confirmed Shipping Date": "", "PFE Notes": "", "Date Invoiced": "", "Supplier": "PFE"}, {"Date": "17 Jun 2026", "How many weeks since order": "2 weeks", "PO Number": "PO-0300", "Reference ": "220746", "Client": "Focus", "Items": "Leach Pump 1 and 2 PFE to Review 3D Scann Data", "Client Expected Delivery Date": "22/09/2026", "PFE ETA": "2026/8/29", "Status": "Awaiting Drawings", "Confirmed Shipping Date": "", "PFE Notes": "PFE to Review 3D Scann Data", "Date Invoiced": "", "Supplier": "PFE"}, {"Date": "08 Jun 2026", "How many weeks since order": "4 weeks", "PO Number": "PO-0298", "Reference ": "295267", "Client": "Evolution", "Items": "Spares Parts List Ball Mill Return , Gravity Concentrator , Gravity Undersize Discharge PFE to Review 3D Scann Data", "Client Expected Delivery Date": "08/09/2026", "PFE ETA": "2026/8/19", "Status": "Awaiting Drawings", "Confirmed Shipping Date": "", "PFE Notes": "PFE to Review 3D Scann Data", "Date Invoiced": "", "Supplier": "PFE"}, {"Date": "02 Jun 2026", "How many weeks since order": "5 weeks", "PO Number": "PO-0297", "Reference ": "16650", "Client": "Meeka", "Items": "AIRLIFT PIPING", "Client Expected Delivery Date": "2/9/26", "PFE ETA": "2026/7/30", "Status": "Currently Being Fabricated", "Confirmed Shipping Date": "", "PFE Notes": "", "Date Invoiced": "", "Supplier": "PFE"}, {"Date": "25 May 2026", "How many weeks since order": "6 weeks", "PO Number": "PO-0295", "Reference ": "16522", "Client": "Meeka", "Items": "350-M-008 ELUTION COLUMN CARBON EDUCTOR", "Client Expected Delivery Date": "25/08/26", "PFE ETA": "2026/8/14", "Status": "Currently Being Fabricated", "Confirmed Shipping Date": "", "PFE Notes": "", "Date Invoiced": "22 Jun 2026", "Supplier": "PFE"}, {"Date": "25 May 2026", "How many weeks since order": "6 weeks", "PO Number": "PO-0296", "Reference ": "4501693838", "Client": "Weir", "Items": "2x SPI-001 DN300 STRAIGHT SPOOL", "Client Expected Delivery Date": "15/09/2026", "PFE ETA": "2026/8/1", "Status": "In Transit", "Confirmed Shipping Date": "2026/8/1", "PFE Notes": "", "Date Invoiced": "", "Supplier": "PFE"}, {"Date": "07 May 2026", "How many weeks since order": "8 weeks", "PO Number": "PO-0293", "Reference ": "4501684810", "Client": "Weir", "Items": "2x Ceramic Weir Spools CERAMIC LINED BEND 90° VDTC4154L- B CERAMIC LINED STRAIGHT\nVDTC4154L- A", "Client Expected Delivery Date": "06/08/2026", "PFE ETA": "2026/8/1", "Status": "In Transit", "Confirmed Shipping Date": "2026/8/1", "PFE Notes": "", "Date Invoiced": "", "Supplier": "PFE"}, {"Date": "30 Apr 2026", "How many weeks since order": "9 weeks", "PO Number": "PO-0291", "Reference ": "FOP 219353", "Client": "Focus", "Items": "Suction Y-piece - Lower Discharge hopper & Pump Spools - Pronto Spare (QU 1214 and 1246)  PFE to Review 3D Scann Data", "Client Expected Delivery Date": "21/7/26", "PFE ETA": "TBD", "Status": "Awaiting Drawings", "Confirmed Shipping Date": "", "PFE Notes": "PFE to Review 3D Scann Data", "Date Invoiced": "", "Supplier": "PFE & Mechlink"}, {"Date": "24 Apr 2026", "How many weeks since order": "10 weeks", "PO Number": "PO-0286", "Reference ": "2405622", "Client": "Min Res", "Items": "QU-1220 - Con Filter Feed", "Client Expected Delivery Date": "17/7/26", "PFE ETA": "2026/8/19", "Status": "Currently Being Fabricated", "Confirmed Shipping Date": "", "PFE Notes": "", "Date Invoiced": "", "Supplier": "PFE"}, {"Date": "21 Apr 2026", "How many weeks since order": "11 weeks", "PO Number": "PO-0285", "Reference ": "2401983", "Client": "Min Res", "Items": "MRL - 60PP001 Discharge - > 60PP002 Suction", "Client Expected Delivery Date": "31 Jul 2026", "PFE ETA": "2026/8/19", "Status": "Currently Being Fabricated", "Confirmed Shipping Date": "", "PFE Notes": "", "Date Invoiced": "", "Supplier": "PFE"}, {"Date": "20 Apr 2026", "How many weeks since order": "11 weeks", "PO Number": "PO-0283", "Reference ": "4501675076", "Client": "Weir", "Items": "SPI-002, SPI-003, SPI-005 Ceramic Lined Spools - Weir", "Client Expected Delivery Date": "22 Jun 2026", "PFE ETA": "2026/7/8", "Status": "In Transit", "Confirmed Shipping Date": "2026/7/8", "PFE Notes": "left china last week, eta end of June , 8mm tiles", "Date Invoiced": "", "Supplier": "PFE"}, {"Date": "20 Apr 2026", "How many weeks since order": "11 weeks", "PO Number": "PO-0284", "Reference ": "7500149023", "Client": "Tronox", "Items": "feed prep adaptor spools - MK#  M361-A\nDOWN STREAM ADAPTOR (DN750) and         MK#  M361C\nUPSTREAM ADAPTOR (DN750)", "Client Expected Delivery Date": "24 Aug 2026", "PFE ETA": "2026/8/19", "Status": "Currently Being Fabricated", "Confirmed Shipping Date": "", "PFE Notes": "leave china July 10", "Date Invoiced": "", "Supplier": "PFE"}, {"Date": "09 Apr 2026", "How many weeks since order": "12 weeks", "PO Number": "PO-0282", "Reference ": "D18842", "Client": "Pantoro", "Items": "LV WASH RAMPS", "Client Expected Delivery Date": "09 Jul 2026", "PFE ETA": "2026/8/29", "Status": "Currently Being Fabricated", "Confirmed Shipping Date": "", "PFE Notes": "update as of 21 May: still being fabricated, drawings will be ready soon with some TQs for client confirmation. Drawings to come through maybe next week, need to find substricute materials 16.6 -  Customer has approved TQ - Ken said should arrive end of Aug, updated last July 3rd", "Date Invoiced": "", "Supplier": "PFE"}, {"Date": "30 Mar 2026", "How many weeks since order": "OVERDUE (14 weeks)", "PO Number": "PO-0279", "Reference ": "4501663890", "Client": "Weir", "Items": "SEJ-001 DN450 SMOOTH BORE SGL EXP JOINT", "Client Expected Delivery Date": "29 Jun 2026", "PFE ETA": "2026/7/9", "Status": "In Transit", "Confirmed Shipping Date": "INV-0390 & 2026/7/9", "PFE Notes": "left china last week, eta end of June", "Date Invoiced": "15 Jun 2026", "Supplier": "PFE"}, {"Date": "28 Mar 2026", "How many weeks since order": "OVERDUE (14 weeks)", "PO Number": "PO-0277", "Reference ": "4500015562", "Client": "LionTown", "Items": "10MM SIC BEND No Flange", "Client Expected Delivery Date": "26 Jun 2026", "PFE ETA": "2026/7/8", "Status": "In Transit", "Confirmed Shipping Date": "46211.0", "PFE Notes": "left china last week, eta end of June", "Date Invoiced": "", "Supplier": "PFE"}, {"Date": "28 Mar 2026", "How many weeks since order": "OVERDUE (14 weeks)", "PO Number": "PO-0278", "Reference ": "4500015561", "Client": "LionTown", "Items": "10MM SIC BEND Flange Both Ends", "Client Expected Delivery Date": "26 Jun 2026", "PFE ETA": "2026/7/8", "Status": "In Transit", "Confirmed Shipping Date": "2026/7/8", "PFE Notes": "left china last week, eta end of June", "Date Invoiced": "", "Supplier": "PFE"}, {"Date": "05 Mar 2026", "How many weeks since order": "OVERDUE (17 weeks)", "PO Number": "PO-0274", "Reference ": "W1 291076", "Client": "Evolution", "Items": "350NB Mining Hose  Solar Wear Powered Wear Indicator", "Client Expected Delivery Date": "05 May 2026", "PFE ETA": "2026/7/29", "Status": "In Transit", "Confirmed Shipping Date": "2026/7/29", "PFE Notes": "update as of 21 May: Completed, arriving mid June, Solar panel has been installed , Still doing lining wear lining with the indicator wire , 16.6 update", "Date Invoiced": "", "Supplier": "PFE"}, {"Date": "05 Mar 2026", "How many weeks since order": "OVERDUE (17 weeks)", "PO Number": "PO-0275", "Reference ": "3003213915", "Client": "Boddington", "Items": "Water Spools for July Shut", "Client Expected Delivery Date": "20 Jun 2026", "PFE ETA": "25/05/2026 (ken Phone 13/04/2026)", "Status": "Invoiced", "Confirmed Shipping Date": "INV-0391", "PFE Notes": "update as of 21 May: Ken to confirm and come back to us, said there were some complications on the bend as there were some challenges on the bends. ***follow up*** , in Perth ,", "Date Invoiced": "19 Jun 2026", "Supplier": "PFE"}, {"Date": "25 Feb 2026", "How many weeks since order": "OVERDUE (18 weeks)", "PO Number": "PO-0273", "Reference ": "W1 290797", "Client": "Evolution", "Items": "Discharge Y-Piece, 20HPR20", "Client Expected Delivery Date": "25/05/2026", "PFE ETA": "2026/8/9", "Status": "Currently Being Fabricated", "Confirmed Shipping Date": "", "PFE Notes": "update as of 21 May: Shipping middle June, ETA early July , Still doing lining wear lining with the indicator wire , 16.6 update", "Date Invoiced": "", "Supplier": "PFE"}, {"Date": "24 Feb 2026", "How many weeks since order": "OVERDUE (19 weeks)", "PO Number": "Warranty Hose", "Reference ": "Warranty Hose", "Client": "Tennant", "Items": "3 Warranty Hoses", "Client Expected Delivery Date": "2026/8/29", "PFE ETA": "2026/7/29", "Status": "In Transit", "Confirmed Shipping Date": "2026/7/29", "PFE Notes": "", "Date Invoiced": "", "Supplier": "PFE"}, {"Date": "18 Feb 2026", "How many weeks since order": "OVERDUE (19 weeks)", "PO Number": "PO-0270", "Reference ": "D18141", "Client": "Pantoro", "Items": "CARBON SAFETY SCREEN UNDERPAN", "Client Expected Delivery Date": "18/02/2026", "PFE ETA": "2026/7/22", "Status": "In Transit", "Confirmed Shipping Date": "2026/7/15", "PFE Notes": "Update 05/06 spoke to ken hopefully TUV can com ethis week and despach this friday , update as of 21 May: Doing wiring this week, finished next week, ETA end of June, saw photos, 9.6 on transport stand , Leave end of this week 16.6 - eta Fremantle 19th July - should arrive 23rd 24th", "Date Invoiced": "", "Supplier": "PFE"}, {"Date": "11 Feb 2026", "How many weeks since order": "OVERDUE (20 weeks)", "PO Number": "PO-0267", "Reference ": "3003203113", "Client": "Boddington", "Items": "Hydro Cyclone Cone Trials", "Client Expected Delivery Date": "19/05/2026", "PFE ETA": "2026/8/29", "Status": "Currently Being Fabricated", "Confirmed Shipping Date": "", "PFE Notes": "update as of 21 May: Currently being lined, ETA end of June- last spoke to ken having trouble with the MPU", "Date Invoiced": "", "Supplier": "PFE"}, {"Date": "11 Feb 2026", "How many weeks since order": "OVERDUE (20 weeks)", "PO Number": "PO-0268", "Reference ": "D18085", "Client": "Pantoro", "Items": "PRIMARY CRUSHER ROM BIN STATIC GRIZZLY", "Client Expected Delivery Date": "15/05/2026", "PFE ETA": "2026/7/22", "Status": "In Transit", "Confirmed Shipping Date": "2026/7/22", "PFE Notes": "Update 05/06 spoke to ken hopefully TUV can com ethis week and despach this friday , update as of 21 May: TUV Inspection done on 6th May, heat treatment completed. finished painint on 25th May. Container leaving end of may, Saw photos painted 15.6 waiting for paint to dry hopefully despatch this week , Leave end of this week 16.6 - eta Fremantle 19th July - should arrive 23rd 24th", "Date Invoiced": "", "Supplier": "PFE"}, {"Date": "03 Feb 2026", "How many weeks since order": "OVERDUE (22 weeks)", "PO Number": "PO-0266", "Reference ": "3003200469", "Client": "Boddington", "Items": "Boddington - Water Spools - SPOOL 642-SPL-5-005 & SPOOL 642-SPL-5-001", "Client Expected Delivery Date": "01/05/2026", "PFE ETA": "2026/05/17(ken Phone 13/04/2026)", "Status": "Invoiced", "Confirmed Shipping Date": "INV-0388", "PFE Notes": "update as of 21 May:261 and 0266 arriving next week ( w/c 25th May it will arrive in fremantle ) left shanghai 8th may", "Date Invoiced": "05 Jun 2026", "Supplier": "PFE"}, {"Date": "21 Jan 2026", "How many weeks since order": "", "PO Number": "PO-0265", "Reference ": "20016534", "Client": "Aim", "Items": "2x DN 150 - 125 ECCENTRIC REDUCING SPOOL", "Client Expected Delivery Date": "21/04/2026", "PFE ETA": "2026/05/10 (ken Phone 13/03/2026)", "Status": "Invoiced", "Confirmed Shipping Date": "20016534", "PFE Notes": "", "Date Invoiced": "18 May 2026", "Supplier": "PFE"}, {"Date": "19 Jan 2026", "How many weeks since order": "", "PO Number": "PO-0264", "Reference ": "PO-3008", "Client": "Tennant", "Items": "Boiler Box 800L x 800W x 790H", "Client Expected Delivery Date": "16-04-2026", "PFE ETA": "2026/05/10 (ken Phone 13/03/2026)", "Status": "Invoiced", "Confirmed Shipping Date": "INV-0383", "PFE Notes": "", "Date Invoiced": "18 May 2026", "Supplier": "PFE"}, {"Date": "12 Jan 2026", "How many weeks since order": "", "PO Number": "PO-0262", "Reference ": "3003192478.0", "Client": "Boddington", "Items": "666-SPL-2-035- T SPOOL SUCTION", "Client Expected Delivery Date": "01-04-2026", "PFE ETA": "2026/4/04 (ken Email 03/03/2026)", "Status": "Invoiced", "Confirmed Shipping Date": "INV-0377", "PFE Notes": "", "Date Invoiced": "13 Apr 2026", "Supplier": "PFE"}, {"Date": "09 Jan 2026", "How many weeks since order": "OVERDUE (25 weeks)", "PO Number": "PO-0261", "Reference ": "20016415", "Client": "Aim", "Items": "SIC- CS- Spool Length- 410mm Wear Liner- SIC DN50 Water Addition Port DN100 Dump Port Table E Flanges Swivel\nMining Hose Eccentric Reducer Length- 450mm Wear Liner- Natural Rubber Table E Flange Swivel Warman Pump Flange", "Client Expected Delivery Date": "08-MAY-26", "PFE ETA": "2026/4/29 (ken Email 03/03/2026)", "Status": "Invoiced", "Confirmed Shipping Date": "INV-0387", "PFE Notes": "update as of 21 May: 261 and 0266 arriving next week ( w/c 25th May it will arrive in fremantle ) left shanghai 8th may", "Date Invoiced": "05 Jun 2026", "Supplier": "PFE"}, {"Date": "05 Jan 2026", "How many weeks since order": "OVERDUE (26 weeks)", "PO Number": "PO-0260", "Reference ": "3003189467", "Client": "Boddington", "Items": "62119430 11147-631-50X-0012 SPOOL,TEE PIECE,750NB,300NB,1171MM,ST", "Client Expected Delivery Date": "05/04/2026", "PFE ETA": "28/04/26 (ken Phone 13/04/2026)", "Status": "Invoiced", "Confirmed Shipping Date": "INV-0386", "PFE Notes": "25/05/2026", "Date Invoiced": "", "Supplier": "PFE"}, {"Date": "31 Dec 2025", "How many weeks since order": "", "PO Number": "PO-0259", "Reference ": "20016242", "Client": "Aim", "Items": "High Manganese Steel Ring Hose Bend 330-HS-04/D 630*630", "Client Expected Delivery Date": "24/03/2026", "PFE ETA": "Feb 25", "Status": "Invoiced", "Confirmed Shipping Date": "", "PFE Notes": "", "Date Invoiced": "18 Feb 2026", "Supplier": "PFE"}, {"Date": "11 Dec 2025", "How many weeks since order": "", "PO Number": "PO-0257", "Reference ": "3003183372", "Client": "Boddington", "Items": "CYCLONE PUMP ISOLATION Spool  631-SPL-0-135 DWG 11147-631-50X-0012Rev2", "Client Expected Delivery Date": "11/02/2025", "PFE ETA": "eta Fremantle 11 Mar", "Status": "Invoiced", "Confirmed Shipping Date": "eta Fremantle 11 Mar", "PFE Notes": "", "Date Invoiced": "", "Supplier": "PFE"}, {"Date": "30 Nov 2025", "How many weeks since order": "", "PO Number": "PO-0253", "Reference ": "20015772", "Client": "Aim", "Items": "High Manganese Steel Ring Hose Bend 330-HS-04/B", "Client Expected Delivery Date": "02/03/2026", "PFE ETA": "Feb 25", "Status": "Invoiced", "Confirmed Shipping Date": "", "PFE Notes": "", "Date Invoiced": "18 Feb 2026", "Supplier": "PFE"}, {"Date": "26 Nov 2025", "How many weeks since order": "", "PO Number": "PO-0252", "Reference ": "PO-2551", "Client": "Tennant", "Items": "200NB Straub Style Coupling to suit (Pipe OD219) & Ball Valves for BSP Ports", "Client Expected Delivery Date": "26/01/2025", "PFE ETA": "Lands Feb 24th", "Status": "Invoiced", "Confirmed Shipping Date": "INV-0363", "PFE Notes": "", "Date Invoiced": "03 Mar 2026", "Supplier": "PFE"}, {"Date": "20 Nov 2025", "How many weeks since order": "", "PO Number": "PO-0251", "Reference ": "13368", "Client": "Meeka", "Items": "Cyclone Pump Piping", "Client Expected Delivery Date": "20/10/2025", "PFE ETA": "End of Feb", "Status": "Invoiced", "Confirmed Shipping Date": "INV-0378", "PFE Notes": "", "Date Invoiced": "15 Apr 2026", "Supplier": "PFE"}, {"Date": "18 Nov 2025", "How many weeks since order": "", "PO Number": "PO-0245", "Reference ": "2258837", "Client": "MRL Wodgina", "Items": "DN500 SIC T Piece", "Client Expected Delivery Date": "01/29/26", "PFE ETA": "", "Status": "Invoiced", "Confirmed Shipping Date": "Mid Feb on Fast Boat", "PFE Notes": "INV-0372", "Date Invoiced": "09 Mar 2026", "Supplier": "PFE"}, {"Date": "18 Nov 2025", "How many weeks since order": "", "PO Number": "PO-0247", "Reference ": "2258839", "Client": "MRL Wodgina", "Items": "DN500 SIC T Piece", "Client Expected Delivery Date": "10/02/2025", "PFE ETA": "", "Status": "Invoiced", "Confirmed Shipping Date": "Mid Feb on Fast Boat", "PFE Notes": "INV-0373", "Date Invoiced": "09 Mar 2026", "Supplier": "PFE"}, {"Date": "18 Nov 2025", "How many weeks since order": "", "PO Number": "PO-0249", "Reference ": "2258845", "Client": "MRL Wodgina", "Items": "DN500 SIC T Piece", "Client Expected Delivery Date": "10/02/2025", "PFE ETA": "", "Status": "Invoiced", "Confirmed Shipping Date": "Mid Feb on Fast Boat", "PFE Notes": "INV-0371", "Date Invoiced": "09 Mar 2026", "Supplier": "PFE"}, {"Date": "11 Nov 2025", "How many weeks since order": "", "PO Number": "PO-0244", "Reference ": "3003171190", "Client": "Boddington", "Items": "Boddington 11147-664-50X-0029\nELUTION TRAIN 1\nLOADED CARBON SCREEN SPRAY FILTER\nSPOOL\nAs Per 11147-664-50X-0029", "Client Expected Delivery Date": "11/2/2025", "PFE ETA": "", "Status": "Invoiced", "Confirmed Shipping Date": "INV-370", "PFE Notes": "", "Date Invoiced": "17 Mar 2026", "Supplier": "PFE"}, {"Date": "04 Nov 2025", "How many weeks since order": "", "PO Number": "PO-242", "Reference ": "20015430", "Client": "Aim", "Items": "High Manganese Steel Ring Straight\nMark Hose ID : 330-HS-04E\n2492mm Long\n10mm Mn Steel + 2mm Rubber Skin\nTable E Swivel Flanges", "Client Expected Delivery Date": "03/02/2025", "PFE ETA": "Feb 25", "Status": "Invoiced", "Confirmed Shipping Date": "", "PFE Notes": "", "Date Invoiced": "18 Feb 2026", "Supplier": "PFE"}, {"Date": "03 Nov 2025", "How many weeks since order": "", "PO Number": "PO-0237", "Reference ": "PO-2403", "Client": "Tennant", "Items": "As Per Navis Works Dimensions\nBoiler Box 800L x 800W x 790H\nIncludes\nInspection Hatch\n15mm Linatex Liner\nInlet for 250NB Mining Hose\nInlet for 100NB Mining Hose\n10mm Steel Plate Weir - Linatex Lined\nOutlet for 250NB Mining Hose\nDischarge Flange for Mining Hose - Table TBC", "Client Expected Delivery Date": "20/12/2026", "PFE ETA": "Lands Feb 24th", "Status": "Invoiced", "Confirmed Shipping Date": "INV-0362", "PFE Notes": "", "Date Invoiced": "03 Mar 2026", "Supplier": "PFE"}, {"Date": "03 Nov 2025", "How many weeks since order": "", "PO Number": "PO-0238", "Reference ": "PO-2406", "Client": "Tennant", "Items": "QU-1049 Cyclone Feed Hose - Replace HDPE Section", "Client Expected Delivery Date": "20/12/2027", "PFE ETA": "Dec 19", "Status": "Invoiced", "Confirmed Shipping Date": "", "PFE Notes": "", "Date Invoiced": "29 Dec 2025", "Supplier": "PFE"}, {"Date": "03 Nov 2025", "How many weeks since order": "", "PO Number": "PO-0239", "Reference ": "20015386", "Client": "Aim", "Items": "Size:150NB - 125NB\nType:Eccentric Reducing Spool\nLength:1 x 345mm + 3x 360mm\nWear Liner: 8mm SIC", "Client Expected Delivery Date": "03/02/2025", "PFE ETA": "eta Fremantle 11 Mar", "Status": "Invoiced", "Confirmed Shipping Date": "INV-0361", "PFE Notes": "", "Date Invoiced": "03 Mar 2026", "Supplier": "PFE"}, {"Date": "03 Nov 2025", "How many weeks since order": "", "PO Number": "PO-240", "Reference ": "20015387", "Client": "Aim", "Items": "2x 150NB-100NB\nConcentric Reducer\n6mm SIC Wear Liner\nO/A length 285mm", "Client Expected Delivery Date": "03/02/2025", "PFE ETA": "eta Fremantle 11 Mar", "Status": "Invoiced", "Confirmed Shipping Date": "INV-0360", "PFE Notes": "", "Date Invoiced": "03 Mar 2026", "Supplier": "PFE"}, {"Date": "03 Nov 2025", "How many weeks since order": "", "PO Number": "PO-241", "Reference ": "20015389", "Client": "Aim", "Items": "DN100NB \nWear Liner 10mm SiC \nID 90 mm\nLength 406mm\nEnd 1 DN100 Table D \nEnd 2 DN100 Table E", "Client Expected Delivery Date": "03/02/2025", "PFE ETA": "2026/4/9 (ken Email 03/03/2026", "Status": "Invoiced", "Confirmed Shipping Date": "", "PFE Notes": "", "Date Invoiced": "", "Supplier": "PFE"}, {"Date": "31 Oct 2025", "How many weeks since order": "", "PO Number": "PO-0232", "Reference ": "PO-2390", "Client": "Tennant", "Items": "QU-1039 Mill Pump Discharge Hose - Cut and Fit Between Pump and Tec Taylor Valves", "Client Expected Delivery Date": "20/12/2025", "PFE ETA": "Dec 19", "Status": "Invoiced", "Confirmed Shipping Date": "", "PFE Notes": "", "Date Invoiced": "29 Dec 2025", "Supplier": "PFE"}, {"Date": "31 Oct 2025", "How many weeks since order": "", "PO Number": "PO-0233", "Reference ": "PO-2393", "Client": "Tennant", "Items": "250NB Replace Boiler Box Hoses", "Client Expected Delivery Date": "20/12/2025", "PFE ETA": "Dec 19", "Status": "Invoiced", "Confirmed Shipping Date": "", "PFE Notes": "", "Date Invoiced": "29 Dec 2025", "Supplier": "PFE"}, {"Date": "31 Oct 2025", "How many weeks since order": "", "PO Number": "PO-0234", "Reference ": "PO-2385", "Client": "Tennant", "Items": "QU-1048 Cyclone Feed Hose - Cut and Fit Between Tec Taylor Valves & HDPE", "Client Expected Delivery Date": "20/12/2025", "PFE ETA": "Dec 19", "Status": "Invoiced", "Confirmed Shipping Date": "", "PFE Notes": "", "Date Invoiced": "29 Dec 2025", "Supplier": "PFE"}, {"Date": "31 Oct 2025", "How many weeks since order": "", "PO Number": "PO-0235", "Reference ": "PO-2394", "Client": "Tennant", "Items": "QU-1048 Cyclone Feed Hose - Cut and Fit Between Tec Taylor Valves & HDPE", "Client Expected Delivery Date": "20/12/2025", "PFE ETA": "Dec 19", "Status": "Invoiced", "Confirmed Shipping Date": "", "PFE Notes": "", "Date Invoiced": "09 Feb 2026", "Supplier": "PFE"}, {"Date": "29 Oct 2025", "How many weeks since order": "", "PO Number": "PO-0231", "Reference ": "3003167546", "Client": "Boddington", "Items": "666-SPL-2-001 T SPOOL - 12mm Ceramic", "Client Expected Delivery Date": "28/01/2026", "PFE ETA": "eta Fremantle 11 Mar", "Status": "Invoiced", "Confirmed Shipping Date": "INV-0366", "PFE Notes": "", "Date Invoiced": "", "Supplier": "PFE"}, {"Date": "27 Oct 2025", "How many weeks since order": "", "PO Number": "PO-0230/254", "Reference ": "PO-2333", "Client": "Tennant", "Items": "Tennant Creek MIll and Tailings Pumps Spools", "Client Expected Delivery Date": "", "PFE ETA": "Lands Feb 24th", "Status": "Invoiced", "Confirmed Shipping Date": "INV-0364", "PFE Notes": "", "Date Invoiced": "03 Mar 2026", "Supplier": "PFE"}, {"Date": "08 Oct 2025", "How many weeks since order": "", "PO Number": "PO-0228", "Reference ": "20014929", "Client": "AIM", "Items": "Suction Eccentric Reducing Mining Hose\nSize: 300-150\nLength: 865mm\nFlush Port 1: 50NB Table E\nFlush Port 2: 100NB Table E\nFlange 1: 300NB Table E\nFlange 3: 6/4 E-AH Warman Intake\nWear Liner 12mm in Body", "Client Expected Delivery Date": "31-DEC-25", "PFE ETA": "will leave Shangha Feb", "Status": "Invoiced", "Confirmed Shipping Date": "PFE 08.01", "PFE Notes": "", "Date Invoiced": "19 Feb 2026", "Supplier": "PFE"}, {"Date": "23 Sep 2025", "How many weeks since order": "", "PO Number": "PO-0226", "Reference ": "20014689", "Client": "AIM", "Items": "Boiler box insert 810x270x200", "Client Expected Delivery Date": "31 Dec 2025", "PFE ETA": "will leave Shangha Feb", "Status": "Invoiced", "Confirmed Shipping Date": "PFE 08.01", "PFE Notes": "INV-0382", "Date Invoiced": "05 May 2026", "Supplier": "PFE"}, {"Date": "10 Sep 2025", "How many weeks since order": "", "PO Number": "PO-0225", "Reference ": "4500593315", "Client": "Iluka", "Items": "441509 Pump Suction Spool + DN80 Stub", "Client Expected Delivery Date": "", "PFE ETA": "Please Confirm", "Status": "Invoiced", "Confirmed Shipping Date": "INV-0344", "PFE Notes": "", "Date Invoiced": "01 Jan 2026", "Supplier": "PFE"}, {"Date": "05 Sep 2025", "How many weeks since order": "", "PO Number": "PO-0209", "Reference ": "4501490094", "Client": "Weir", "Items": "PLS CERAMIC - 2X SPOOLS", "Client Expected Delivery Date": "25/08/25", "PFE ETA": "In Perth", "Status": "Invoiced", "Confirmed Shipping Date": "", "PFE Notes": "", "Date Invoiced": "15 Aug 2025", "Supplier": "PFE"}, {"Date": "28 Aug 2025", "How many weeks since order": "", "PO Number": "PO-0224", "Reference ": "4500592383", "Client": "Iluka", "Items": "2x SPOOL PIECE:DN350,297MM LG,FLOWMTR ADPTR", "Client Expected Delivery Date": "", "PFE ETA": "Please Confirm", "Status": "Invoiced", "Confirmed Shipping Date": "INV-0343", "PFE Notes": "", "Date Invoiced": "05 Jan 2026", "Supplier": "PFE"}, {"Date": "25 Aug 2025", "How many weeks since order": "", "PO Number": "PO-222", "Reference ": "4500592072", "Client": "Iluka", "Items": "447955 SPOOL PIECE:DN350,522MM LG,DN8080 STUB", "Client Expected Delivery Date": "", "PFE ETA": "Please Confirm", "Status": "Invoiced", "Confirmed Shipping Date": "INV-0342", "PFE Notes": "", "Date Invoiced": "05 Jan 2026", "Supplier": "PFE"}, {"Date": "12 Aug 2025", "How many weeks since order": "", "PO Number": "PO-222/3", "Reference ": "4501542742", "Client": "Weir/TBO", "Items": "QU-0873REV1 Thunderbox - Spool RFQ -DN700-DN900", "Client Expected Delivery Date": "12/12/2025", "PFE ETA": "20 Jan", "Status": "Invoiced", "Confirmed Shipping Date": "PFE 08.01", "PFE Notes": "INV-0346", "Date Invoiced": "21 Jan 2026", "Supplier": "PFE"}, {"Date": "04 Aug 2025", "How many weeks since order": "", "PO Number": "PO-0220", "Reference ": "7500102754", "Client": "Tronox", "Items": "Line 1 – 100 units to be supplied initially for testing and feedback.\nLine 2 – Remaining 100 units to be delivered following confirmation of any\ndesign improvements (if required).", "Client Expected Delivery Date": "30/11/25", "PFE ETA": "Coming Oct/Ear Nov", "Status": "Invoiced", "Confirmed Shipping Date": "AD delivered to McMahons on 29/12. Mcmahons advised it will reach site on 6/1/26", "PFE Notes": "", "Date Invoiced": "29 Dec 2025", "Supplier": "PFE"}, {"Date": "03 Jul 2025", "How many weeks since order": "", "PO Number": "PO-0219", "Reference ": "20013373", "Client": "AIM", "Items": "Size:150NB - 125NB Type:EccReducing Spool  Length:360mm : 8mm Ceramic", "Client Expected Delivery Date": "03-OCT-25", "PFE ETA": "End of Sep - 7/7-JSSD", "Status": "Invoiced", "Confirmed Shipping Date": "INV-0331", "PFE Notes": "", "Date Invoiced": "13 Oct 2025", "Supplier": "PFE"}, {"Date": "02 Jul 2025", "How many weeks since order": "", "PO Number": "PO-0218", "Reference ": "4500588754", "Client": "Iluka", "Items": "441509 - SPOOL PIECE:TEE,350NB X 1000MM X 75M", "Client Expected Delivery Date": "24.09.2025", "PFE ETA": "End of Sep 6/7-JSSD", "Status": "Invoiced", "Confirmed Shipping Date": "INV-0330", "PFE Notes": "", "Date Invoiced": "13 Oct 2025", "Supplier": "PFE"}, {"Date": "26 Jun 2025", "How many weeks since order": "", "PO Number": "PO-0217", "Reference ": "4500588352", "Client": "Iluka", "Items": "Iluka PT and Flow Meter Spools", "Client Expected Delivery Date": "", "PFE ETA": "End of Sep - 5/7-JSSD", "Status": "Invoiced", "Confirmed Shipping Date": "INV-0329", "PFE Notes": "", "Date Invoiced": "13 Oct 2025", "Supplier": "PFE"}, {"Date": "17 Jun 2025", "How many weeks since order": "", "PO Number": "PO-0214", "Reference ": "MGPS - 865", "Client": "Meeka", "Items": "Meeka Bends", "Client Expected Delivery Date": "", "PFE ETA": "End of Sep - 4/7-JSSD", "Status": "Invoiced", "Confirmed Shipping Date": "INV-0311", "PFE Notes": "", "Date Invoiced": "17 Jun 2025", "Supplier": "PFE"}, {"Date": "09 Jun 2025", "How many weeks since order": "", "PO Number": "PO-0213", "Reference ": "W1 279654", "Client": "Evolution", "Items": "6mm LTX Tails pump discharge spool", "Client Expected Delivery Date": "09/08/2025", "PFE ETA": "End of Sep - 1/7-JSSD & 2/7-JSSD", "Status": "Invoiced", "Confirmed Shipping Date": "INV-0328", "PFE Notes": "", "Date Invoiced": "13 Oct 2025", "Supplier": "PFE"}, {"Date": "03 Jun 2025", "How many weeks since order": "", "PO Number": "PO-0211", "Reference ": "4500586764", "Client": "Iluka", "Items": "2x DWG 242944,SP-009\nSPOOL PIECE:RED,400-350NB,450MM LG,TBL\nE,SP-009,", "Client Expected Delivery Date": "28/08/2025", "PFE ETA": "15-09-2025", "Status": "Invoiced", "Confirmed Shipping Date": "", "PFE Notes": "", "Date Invoiced": "04 Sep 2025", "Supplier": "PFE"}, {"Date": "03 Jun 2025", "How many weeks since order": "", "PO Number": "PO-0212", "Reference ": "W1 279361", "Client": "Evolution", "Items": "6mm Ceramic Tails pump discharge spool", "Client Expected Delivery Date": "01/08/2025", "PFE ETA": "End of Sep - 1/7-JSSD & 2/7-JSSD", "Status": "Invoiced", "Confirmed Shipping Date": "INV-0327", "PFE Notes": "", "Date Invoiced": "13 Oct 2025", "Supplier": "PFE"}, {"Date": "01 Jun 2025", "How many weeks since order": "", "PO Number": "PO-0193", "Reference ": "4501418590", "Client": "Weir", "Items": "1 Spool PLS CERAMIC", "Client Expected Delivery Date": "31/03/2025", "PFE ETA": "Invoiced 14/04/25", "Status": "Invoiced", "Confirmed Shipping Date": "On the water now, end of Mar", "PFE Notes": "", "Date Invoiced": "14 Apr 2025", "Supplier": "PFE"}, {"Date": "12 May 2025", "How many weeks since order": "", "PO Number": "PO-0210", "Reference ": "4500585301", "Client": "Iluka", "Items": "2x SPOOL PIECE:RED,450-400NB,TBL E,SP-011", "Client Expected Delivery Date": "06/08/2025", "PFE ETA": "15-09-2025", "Status": "Invoiced", "Confirmed Shipping Date": "", "PFE Notes": "", "Date Invoiced": "04 Sep 2025", "Supplier": "PFE"}, {"Date": "03 Apr 2025", "How many weeks since order": "", "PO Number": "PO-0206", "Reference ": "20011987", "Client": "Calidus", "Items": "3x DN100NB Wear Liner 10mm SiC ID 90 mm Length 406mm End 1 DN100 Table D End 2 DN100 Table E", "Client Expected Delivery Date": "28/06/2025", "PFE ETA": "First Week of AUG", "Status": "Invoiced", "Confirmed Shipping Date": "", "PFE Notes": "", "Date Invoiced": "08 Nov 2025", "Supplier": "PFE"}, {"Date": "31 Mar 2025", "How many weeks since order": "", "PO Number": "PO-0207", "Reference ": "4501467962", "Client": "Weir", "Items": "7X CERAMIC BENDS AND 3X EXPANSION JOINTS", "Client Expected Delivery Date": "06/06/2025", "PFE ETA": "First Week of AUG", "Status": "Invoiced", "Confirmed Shipping Date": "Invoiced", "PFE Notes": "", "Date Invoiced": "08 Aug 2025", "Supplier": "PFE"}, {"Date": "12 Mar 2025", "How many weeks since order": "", "PO Number": "PO-204", "Reference ": "4500581352", "Client": "Iluka", "Items": "SP-035 DN350 - Pump Spool Warman 12/10 Inlet DN350 Table E", "Client Expected Delivery Date": "11/06/25", "PFE ETA": "First Week of AUG", "Status": "Invoiced", "Confirmed Shipping Date": "", "PFE Notes": "", "Date Invoiced": "21 Feb 2025", "Supplier": "PFE"}, {"Date": "11 Mar 2025", "How many weeks since order": "", "PO Number": "PO-203", "Reference ": "4500581239", "Client": "Iluka", "Items": "SP-069 SPOOL PIECE:350NB X 570MM LG", "Client Expected Delivery Date": "12/03/25", "PFE ETA": "First Week of AUG", "Status": "Invoiced", "Confirmed Shipping Date": "", "PFE Notes": "", "Date Invoiced": "11 Aug 2025", "Supplier": "PFE"}, {"Date": "17 Feb 2025", "How many weeks since order": "", "PO Number": "PO-0200", "Reference ": "20011443", "Client": "Calidus", "Items": "2x 150NB-100NB ConReducer 6mm Ceramic  O/A length 285mm  Table E Flanges", "Client Expected Delivery Date": "17/05/2025", "PFE ETA": "First Week of AUG", "Status": "Invoiced", "Confirmed Shipping Date": "Drawing Approved 25.2", "PFE Notes": "", "Date Invoiced": "08 Nov 2025", "Supplier": "PFE"}, {"Date": "14 Feb 2025", "How many weeks since order": "", "PO Number": "PO-0199", "Reference ": "20011427", "Client": "Calidus", "Items": "Size:150NB - 125NB Type:EccReducing Spool  Length:350mm : 6mm Ceramic", "Client Expected Delivery Date": "15/05/2025", "PFE ETA": "First Week of AUG", "Status": "Invoiced", "Confirmed Shipping Date": "Drawing Approved 24.2", "PFE Notes": "", "Date Invoiced": "08 Nov 2025", "Supplier": "PFE"}, {"Date": "28 Jan 2025", "How many weeks since order": "", "PO Number": "PO-0198", "Reference ": "4500578135", "Client": "Iluka", "Items": "SP-035 - Cancelled", "Client Expected Delivery Date": "28/04/02025", "PFE ETA": "", "Status": "Cancelled", "Confirmed Shipping Date": "In process", "PFE Notes": "", "Date Invoiced": "", "Supplier": "PFE"}, {"Date": "24 Jan 2025", "How many weeks since order": "", "PO Number": "PO-0197", "Reference ": "4501430002", "Client": "Weir", "Items": "1 Spool PLS CERAMIC", "Client Expected Delivery Date": "28/04/2025", "PFE ETA": "Has Arrived in Freo - Waiting to go out", "Status": "Invoiced", "Confirmed Shipping Date": "On track, Mid Apr", "PFE Notes": "", "Date Invoiced": "", "Supplier": "PFE"}, {"Date": "21 Jan 2025", "How many weeks since order": "", "PO Number": "PO-0196", "Reference ": "4501427339", "Client": "Weir", "Items": "1 Spool PLS CERAMIC", "Client Expected Delivery Date": "31/03/2025", "PFE ETA": "Out for delivery 15/04/25", "Status": "Invoiced", "Confirmed Shipping Date": "On the water now, end of Mar", "PFE Notes": "", "Date Invoiced": "14 Apr 2025", "Supplier": "PFE"}, {"Date": "13 Jan 2025", "How many weeks since order": "", "PO Number": "PO-0195", "Reference ": "4500577062", "Client": "Iluka", "Items": "SP-009 - 400NB - 350NB - 365L - 10LTX - ROLLED PLATE SPOOL - TABLE E", "Client Expected Delivery Date": "01/04/2025", "PFE ETA": "Has Arrived in Freo - Waiting to go out", "Status": "Invoiced", "Confirmed Shipping Date": "On track, early Apr", "PFE Notes": "", "Date Invoiced": "28 Apr 2025", "Supplier": "PFE"}, {"Date": "11 Dec 2024", "How many weeks since order": "", "PO Number": "PO-0185", "Reference ": "PO00000799", "Client": "Belltech", "Items": "MK. 4-2300C80720' - AS DRAWN 2x DN500 BENDS", "Client Expected Delivery Date": "05/02/2025", "PFE ETA": "Waiting to invoice", "Status": "Invoiced", "Confirmed Shipping Date": "Waiting for customer to clear from paint shop/warranty paint issue", "PFE Notes": "", "Date Invoiced": "", "Supplier": "PFE"}, {"Date": "26 Nov 2024", "How many weeks since order": "", "PO Number": "PO-0188", "Reference ": "4501399566", "Client": "Weir", "Items": "61482164 Ceramic Tile Lined PIPE; 251-5038-PS-200-L1-iso-1 _1-1; CONC RED; 358L PU-580 DISCH 1, Pronto PN:11003009", "Client Expected Delivery Date": "25/02/2024", "PFE ETA": "", "Status": "Invoiced", "Confirmed Shipping Date": "Airfreight, already paid on 6/01/2025", "PFE Notes": "", "Date Invoiced": "28 Dec 2024", "Supplier": "PFE"}, {"Date": "26 Nov 2024", "How many weeks since order": "", "PO Number": "PO-0189", "Reference ": "7500068272", "Client": "Tronox", "Items": "Mining Hose\nSize: 250NB\nLength: 6m\nWear Liner: 12mm Natural Rubber\nCover: UV Resistant\nWP: 700KPa\nEnd 1: Table D Rotating Flange\nEnd 2: Table D Rotating Flange", "Client Expected Delivery Date": "", "PFE ETA": "Invoiced 14/04/25", "Status": "Invoiced", "Confirmed Shipping Date": "On the water now, end of Mar", "PFE Notes": "", "Date Invoiced": "14 Apr 2025", "Supplier": "PFE"}, {"Date": "25 Nov 2024", "How many weeks since order": "", "PO Number": "PO-0187", "Reference ": "4500574163", "Client": "Iluka", "Items": "SP-035", "Client Expected Delivery Date": "17/02/2025", "PFE ETA": "", "Status": "Invoiced", "Confirmed Shipping Date": "", "PFE Notes": "", "Date Invoiced": "11 Aug 2025", "Supplier": "PFE"}, {"Date": "07 Nov 2024", "How many weeks since order": "", "PO Number": "PO-0168", "Reference ": "4501316404", "Client": "Weir", "Items": "PLS Ceramics", "Client Expected Delivery Date": "30/9/24", "PFE ETA": "26/09/24", "Status": "Invoiced", "Confirmed Shipping Date": "Approved 17/7 - Shanghai 10/09", "PFE Notes": "", "Date Invoiced": "04 Dec 2024", "Supplier": "PFE"}, {"Date": "23 Oct 2024", "How many weeks since order": "", "PO Number": "PO-0183", "Reference ": "4501380035", "Client": "Weir", "Items": "QU-0803 185079-S4 (2060MM) - SIC", "Client Expected Delivery Date": "29/01/2025", "PFE ETA": "Feb 15", "Status": "Invoiced", "Confirmed Shipping Date": "", "PFE Notes": "", "Date Invoiced": "25 Feb 2025", "Supplier": "PFE"}, {"Date": "08 Oct 2024", "How many weeks since order": "", "PO Number": "PO-0181", "Reference ": "4501370256", "Client": "Weir", "Items": "PLS 185079-S2 (1870MM) - SiC", "Client Expected Delivery Date": "21/01/2025", "PFE ETA": "Feb 15", "Status": "Invoiced", "Confirmed Shipping Date": "15 Feb??", "PFE Notes": "", "Date Invoiced": "25 Feb 2025", "Supplier": "PFE"}, {"Date": "01 Oct 2024", "How many weeks since order": "", "PO Number": "PO-0180", "Reference ": "4501366291", "Client": "Weir", "Items": "eramic Tile Lined PIPE; 251-5214-PS-150-L1-iso-1 _0-4; Bend; 89.4DEG FL-501 SLRY RC W 4, Pronto PN:11003069", "Client Expected Delivery Date": "30/12/2024", "PFE ETA": "", "Status": "Invoiced", "Confirmed Shipping Date": "", "PFE Notes": "", "Date Invoiced": "10 Jan 2025", "Supplier": "PFE"}, {"Date": "17 Sep 2024", "How many weeks since order": "", "PO Number": "PO-0178", "Reference ": "7500059063", "Client": "Tronox", "Items": "Floating Hose 425mm x 8200mm", "Client Expected Delivery Date": "16/12/2024", "PFE ETA": "", "Status": "Invoiced", "Confirmed Shipping Date": "", "PFE Notes": "", "Date Invoiced": "10 Jan 2025", "Supplier": "PFE"}, {"Date": "28 Aug 2024", "How many weeks since order": "", "PO Number": "PO-0177", "Reference ": "4501346262", "Client": "Weir", "Items": "PLS 2x Spool", "Client Expected Delivery Date": "30/10/2024", "PFE ETA": "", "Status": "Invoiced", "Confirmed Shipping Date": "", "PFE Notes": "", "Date Invoiced": "10 Jan 2025", "Supplier": "PFE"}, {"Date": "16 Aug 2024", "How many weeks since order": "", "PO Number": "PO-0175", "Reference ": "4501339341", "Client": "Weir", "Items": "PLS 1 Spool", "Client Expected Delivery Date": "31/10/2024", "PFE ETA": "", "Status": "Invoiced", "Confirmed Shipping Date": "Shanghai 10/09", "PFE Notes": "", "Date Invoiced": "04 Dec 2024", "Supplier": "PFE"}, {"Date": "12 Aug 2024", "How many weeks since order": "", "PO Number": "PO-0174", "Reference ": "4501336407", "Client": "Weir", "Items": "PLS Ceramic 2x Spools", "Client Expected Delivery Date": "14/10/2024", "PFE ETA": "18/10/24", "Status": "Invoiced", "Confirmed Shipping Date": "approved 15/08/24 Shanghai 10/09", "PFE Notes": "", "Date Invoiced": "29 Aug 2024", "Supplier": "PFE"}, {"Date": "01 Jul 2024", "How many weeks since order": "", "PO Number": "PO-0163", "Reference ": "4500563841", "Client": "Weir", "Items": "Iluka Aug Shutdown Linatex Spools", "Client Expected Delivery Date": "05/8/24", "PFE ETA": "", "Status": "Invoiced", "Confirmed Shipping Date": "No T Piece - Straight only", "PFE Notes": "", "Date Invoiced": "", "Supplier": "PFE"}, {"Date": "14 Jun 2024", "How many weeks since order": "", "PO Number": "PO-0167", "Reference ": "4501301273", "Client": "Weir", "Items": "PLS Ceramics", "Client Expected Delivery Date": "30/8/24", "PFE ETA": "27/08/24", "Status": "Invoiced", "Confirmed Shipping Date": "Waiting for delivery this week 25.8", "PFE Notes": "", "Date Invoiced": "04 Dec 2024", "Supplier": "PFE"}, {"Date": "07 Jun 2024", "How many weeks since order": "", "PO Number": "PO-0161", "Reference ": "4501296979", "Client": "Weir", "Items": "PLS Ceramics", "Client Expected Delivery Date": "31/7/24", "PFE ETA": "27/08/24", "Status": "Invoiced", "Confirmed Shipping Date": "Waiting for delivery this week 25.8", "PFE Notes": "", "Date Invoiced": "05 Aug 2024", "Supplier": "PFE"}, {"Date": "30 May 2024", "How many weeks since order": "", "PO Number": "PO-0159", "Reference ": "207802", "Client": "Bellevue", "Items": "Rock Shedder", "Client Expected Delivery Date": "23/8/24", "PFE ETA": "08/09/24", "Status": "Invoiced", "Confirmed Shipping Date": "approved", "PFE Notes": "", "Date Invoiced": "20 Sep 2024", "Supplier": "PFE"}, {"Date": "29 Apr 2024", "How many weeks since order": "", "PO Number": "PO-0160", "Reference ": "4501273340 QU-0694", "Client": "Weir", "Items": "PLS Ceramics", "Client Expected Delivery Date": "26/7/2024", "PFE ETA": "", "Status": "Invoiced", "Confirmed Shipping Date": "Arrived in Aus", "PFE Notes": "", "Date Invoiced": "29 Aug 2024", "Supplier": "PFE"}, {"Date": "26 Apr 2024", "How many weeks since order": "", "PO Number": "PO-0157", "Reference ": "QU-0693 4501270855", "Client": "Weir", "Items": "PLS Ceramics", "Client Expected Delivery Date": "22/7/2024", "PFE ETA": "", "Status": "Invoiced", "Confirmed Shipping Date": "Arrived in Aus", "PFE Notes": "", "Date Invoiced": "04 Dec 2024", "Supplier": "PFE"}, {"Date": "24 Apr 2024", "How many weeks since order": "", "PO Number": "PO-0156", "Reference ": "QU-0681 4500559909", "Client": "Weir", "Items": "Iluka Linatex", "Client Expected Delivery Date": "22/7/2024", "PFE ETA": "27/08/24", "Status": "Invoiced", "Confirmed Shipping Date": "Waiting for delivery this week 25.8", "PFE Notes": "", "Date Invoiced": "", "Supplier": "PFE"}, {"Date": "18 Apr 2024", "How many weeks since order": "", "PO Number": "PO-0155", "Reference ": "TBO - Thunderbox P1", "Client": "Weir", "Items": "Ceramic Spool Package", "Client Expected Delivery Date": "26/4/2024", "PFE ETA": "1/7/2024", "Status": "Invoiced", "Confirmed Shipping Date": "", "PFE Notes": "", "Date Invoiced": "", "Supplier": "PFE"}, {"Date": "17 Apr 2024", "How many weeks since order": "", "PO Number": "PO-0154", "Reference ": "4501265818", "Client": "Weir", "Items": "PLS Ceramics", "Client Expected Delivery Date": "25/6/2024", "PFE ETA": "", "Status": "Invoiced", "Confirmed Shipping Date": "Arrived in Aus", "PFE Notes": "", "Date Invoiced": "", "Supplier": "PFE"}, {"Date": "13 Mar 2024", "How many weeks since order": "", "PO Number": "PO-0089", "Reference ": "K11961", "Client": "Weir", "Items": "PLS Ceramics", "Client Expected Delivery Date": "31/5/2024", "PFE ETA": "", "Status": "Invoiced", "Confirmed Shipping Date": "Arrived 14-06-2024 - Please Invoice", "PFE Notes": "", "Date Invoiced": "", "Supplier": "PFE"}, {"Date": "08 Feb 2024", "How many weeks since order": "", "PO Number": "PO-0172", "Reference ": "4500566659", "Client": "Weir", "Items": "Iluka SP-035", "Client Expected Delivery Date": "08/11/2024", "PFE ETA": "8/10/24", "Status": "Invoiced", "Confirmed Shipping Date": "can you please add welding 443117 on the opposite side of the spool?\n\nSo SP-035 on one side and 443117 Approved 13/08  Shanghai 10/09", "PFE Notes": "", "Date Invoiced": "", "Supplier": "PFE"}, {"Date": "14/12/2025", "How many weeks since order": "", "PO Number": "PO-205", "Reference ": "20011717.0", "Client": "Calidus", "Items": "5mm SiC - Insert", "Client Expected Delivery Date": "18/06/2025", "PFE ETA": "First Week of AUG", "Status": "Invoiced", "Confirmed Shipping Date": "", "PFE Notes": "", "Date Invoiced": "08 Nov 2025", "Supplier": "PFE"}, {"Date": "16/07/2024", "How many weeks since order": "", "PO Number": "PO-0169", "Reference ": "PO-00004012 QU-0727", "Client": "FMG CC", "Items": "FMG - Christmass Creek", "Client Expected Delivery Date": "04/10/24", "PFE ETA": "4/10/24", "Status": "Invoiced", "Confirmed Shipping Date": "Approved 5/8  Shanghai 10/09, At enegery logistix", "PFE Notes": "", "Date Invoiced": "", "Supplier": "PFE"}, {"Date": "17/12/2024", "How many weeks since order": "", "PO Number": "PO-0190", "Reference ": "4501410595", "Client": "Weir", "Items": "5 Spools PLS CERAMIC", "Client Expected Delivery Date": "06/03/2025", "PFE ETA": "Invoiced 14/04/25", "Status": "Invoiced", "Confirmed Shipping Date": "On the water now, end of Mar", "PFE Notes": "", "Date Invoiced": "16 Apr 2025", "Supplier": "PFE"}, {"Date": "19/07/2024", "How many weeks since order": "", "PO Number": "PO-0170", "Reference ": "4501322588", "Client": "Weir", "Items": "PLS Ceramics 6x spools", "Client Expected Delivery Date": "04/10/24", "PFE ETA": "4/10/24", "Status": "Invoiced", "Confirmed Shipping Date": "approved 15/08/24", "PFE Notes": "", "Date Invoiced": "04 Dec 2024", "Supplier": "PFE"}, {"Date": "20/12/2024", "How many weeks since order": "", "PO Number": "PO-0191", "Reference ": "4501413580", "Client": "Weir", "Items": "1 Spool PLS CERAMIC", "Client Expected Delivery Date": "14/03/2024", "PFE ETA": "Invoiced 14/04/25", "Status": "Invoiced", "Confirmed Shipping Date": "On the water now, end of Mar", "PFE Notes": "", "Date Invoiced": "14 Apr 2025", "Supplier": "PFE"}, {"Date": "23/12/2024", "How many weeks since order": "", "PO Number": "PO-0192", "Reference ": "4501414356", "Client": "Weir", "Items": "2 Spools PLS CERAMIC", "Client Expected Delivery Date": "20/03/2025", "PFE ETA": "Invoiced 14/04/25", "Status": "Invoiced", "Confirmed Shipping Date": "On the water now, end of Mar", "PFE Notes": "", "Date Invoiced": "14 Apr 2025", "Supplier": "PFE"}, {"Date": "24-/07/2024", "How many weeks since order": "", "PO Number": "PO-0171", "Reference ": "4501325917", "Client": "Weir", "Items": "PLS Ceramics 2x spools", "Client Expected Delivery Date": "30/09/2024", "PFE ETA": "29/09/24", "Status": "Invoiced", "Confirmed Shipping Date": "approved 15/08/24 Shanghai 10/09", "PFE Notes": "", "Date Invoiced": "28 Apr 2025", "Supplier": "PFE"}, {"Date": "28/03/2025", "How many weeks since order": "", "PO Number": "PO-0206", "Reference ": "( 20011962) 20011934", "Client": "Calidus", "Items": "1x DN100NB Wear Liner 10mm SiC ID 90 mm Length 406mm End 1 DN100 Table D End 2 DN100 Table E", "Client Expected Delivery Date": "28/06/2025", "PFE ETA": "First Week of AUG", "Status": "Invoiced", "Confirmed Shipping Date": "", "PFE Notes": "", "Date Invoiced": "08 Nov 2025", "Supplier": "PFE"}]</script>
+<script>
+(function () {
+  const records = JSON.parse(document.getElementById('po-data').textContent);
+  const tbody = document.getElementById('rows');
+  const search = document.getElementById('search');
+  const chips = Array.from(document.querySelectorAll('.chip'));
+  const emptyState = document.getElementById('emptyState');
+  let activeStatus = '__open__';
+  let sortDir = 1;
+  let lang = 'en';
+
+  const STR = {
+    title: { en: 'PFE Purchase Order Tracker', zh: 'PFE 采购订单跟踪表' },
+    subtitle: { en: 'Live status of every open and recent order placed with PFE', zh: 'PFE 供应商订单的实时状态一览' },
+    ordersOnFile: { en: 'orders on file', zh: '个订单在案' },
+    lastRefreshedLabel: { en: 'Last refreshed', zh: '最近更新：' },
+    autoRefresh: { en: 'Refreshes automatically each morning', zh: '每天早上自动更新' },
+    searchPlaceholder: { en: 'Search PO number, client, item, reference…', zh: '搜索采购单号、客户、货品、参考号…' },
+    chipOpen: { en: 'Open (not invoiced)', zh: '未结（未开票）' },
+    chipAll: { en: 'All', zh: '全部' },
+    chipInvoiced: { en: 'Invoiced', zh: '已开票' },
+    chipTransit: { en: 'In Transit', zh: '运输中' },
+    chipFab: { en: 'Fabricating', zh: '生产中' },
+    chipDrawings: { en: 'Awaiting Drawings', zh: '等待图纸' },
+    cardCriticalTitle: { en: 'Critical', zh: '紧急' },
+    cardCriticalSub: { en: '4+ weeks with no drawings, or 8+ weeks not yet shipped with no dispatch date', zh: '图纸超过4周未完成，或超过8周仍未发货且无确认发货日期' },
+    attnEmptyCritical: { en: 'Nothing critical right now.', zh: '目前没有紧急事项。' },
+    criticalDrawingsFlag: { en: 'drawings {w}', zh: '图纸 {w}周' },
+    criticalDespatchFlag: { en: 'no dispatch {w}', zh: '未发货 {w}周' },
+    cardEtaTitle: { en: 'PFE ETA Needed', zh: '需要PFE答复到货日期' },
+    cardEtaSub: { en: 'Raised 2+ weeks ago, still no ETA back from PFE', zh: '下单已超过2周，PFE仍未给出到货日期' },
+    cardDrawingsTitle: { en: 'Awaiting Drawings', zh: '等待图纸' },
+    cardDrawingsSub: { en: 'Any ETA given here is provisional until drawings are done', zh: '图纸未完成前，此处的到货日期仅为临时预估' },
+    cardShippingTitle: { en: 'Confirmed Shipping Updates', zh: '已确认的发货更新' },
+    cardShippingSub: { en: 'Open orders with a shipping confirmation logged', zh: '已记录发货确认信息的未结订单' },
+    attnEmptyEta: { en: 'PFE is up to date on ETAs — nothing overdue.', zh: 'PFE 的到货日期均已更新，没有逾期项。' },
+    attnEmptyDrawings: { en: 'Nothing waiting on drawings right now.', zh: '目前没有等待图纸的订单。' },
+    attnEmptyShipping: { en: 'No shipping confirmations logged yet.', zh: '暂无发货确认记录。' },
+    etaOverdueBadge: { en: 'no reply 2w+', zh: '超2周未回复' },
+    etaOverdueTip: { en: 'PO raised 2+ weeks ago and PFE has not confirmed an ETA yet', zh: '下单已超过2周，PFE 尚未确认到货日期' },
+    etaProvisionalBadge: { en: 'provisional', zh: '临时预估' },
+    etaProvisionalTip: { en: 'Drawings are not finalised yet, so this ETA may change', zh: '图纸尚未定稿，该到货日期可能会调整' },
+    thDate: { en: 'PO Date', zh: '订单日期' },
+    thWeeks: { en: 'Weeks Open', zh: '已等待周数' },
+    thPO: { en: 'PO Number', zh: '采购单号' },
+    thRef: { en: 'Reference', zh: '参考号' },
+    thClient: { en: 'Client', zh: '客户' },
+    thItems: { en: 'Items', zh: '货品' },
+    thCED: { en: 'Client Expected Delivery', zh: '客户预计交货日期' },
+    thETA: { en: 'PFE ETA', zh: 'PFE 预计到货' },
+    thStatus: { en: 'Status', zh: '状态' },
+    thShipping: { en: 'Confirmed Shipping / Update', zh: '确认发货 / 更新' },
+    thNotes: { en: 'PFE Notes', zh: 'PFE 备注' },
+    thInvoiced: { en: 'Date Invoiced', zh: '开票日期' },
+    emptyState: { en: 'No orders match your search.', zh: '没有符合条件的订单。' },
+    footerLeft: { en: 'GenRock Trading Pty Ltd — for supplier reference only', zh: 'GenRock Trading Pty Ltd — 仅供供应商参考' }
+  };
+
+  // Short labels for the pill in the (narrow) Status column — the full wording is still
+  // available via the pill's title tooltip so nothing is lost, just not forced to fit.
+  const STATUS_LABEL = {
+    'Invoiced': { en: 'Invoiced', zh: '已开票' },
+    'In Transit': { en: 'In Transit', zh: '运输中' },
+    'Currently Being Fabricated': { en: 'Fabricating', zh: '生产中' },
+    'Awaiting Drawings': { en: 'Awaiting Drawings', zh: '等待图纸' },
+    'Awaiting Drawing Approval From Customer': { en: 'Awaiting Approval', zh: '等待客户批准' },
+    'Cancelled': { en: 'Cancelled', zh: '已取消' }
+  };
+  const STATUS_LABEL_FULL = {
+    'Invoiced': { en: 'Invoiced', zh: '已开票' },
+    'In Transit': { en: 'In Transit', zh: '运输中' },
+    'Currently Being Fabricated': { en: 'Currently Being Fabricated', zh: '生产中' },
+    'Awaiting Drawings': { en: 'Awaiting Drawings', zh: '等待图纸' },
+    'Awaiting Drawing Approval From Customer': { en: 'Awaiting Drawing Approval From Customer', zh: '等待客户确认图纸' },
+    'Cancelled': { en: 'Cancelled', zh: '已取消' }
+  };
+
+  const statusMeta = {
+    'Invoiced': ['st-invoiced', 'st-invoiced-bg'],
+    'In Transit': ['st-transit', 'st-transit-bg'],
+    'Currently Being Fabricated': ['st-fab', 'st-fab-bg'],
+    'Awaiting Drawings': ['st-wait', 'st-wait-bg'],
+    'Awaiting Drawing Approval From Customer': ['st-wait', 'st-wait-bg'],
+    'Cancelled': ['st-cancel', 'st-cancel-bg']
+  };
+
+  function statusLabel(s) {
+    const m = STATUS_LABEL[s];
+    return m ? m[lang] : (s || '');
+  }
+  function statusLabelFull(s) {
+    const m = STATUS_LABEL_FULL[s];
+    return m ? m[lang] : (s || '');
+  }
+
+  function isAwaitingDrawings(r) {
+    return !!(r.Status && r.Status.indexOf('Awaiting Drawing') === 0);
+  }
+  function isOpenStatus(r) {
+    return !!(r.Status && r.Status !== 'Invoiced' && r.Status !== 'Cancelled');
+  }
+  function isOpenWithShippingUpdate(r) {
+    return !!(r['Confirmed Shipping Date'] && isOpenStatus(r));
+  }
+  function weeksNum(s) {
+    if (!s) return null;
+    const m = s.match(/(\d+)\s*weeks?/i);
+    return m ? parseInt(m[1], 10) : null;
+  }
+  function hasNoEtaYet(r) {
+    const raw = (r['PFE ETA'] || '').trim();
+    return !raw || /^(tba|tbd)$/i.test(raw);
+  }
+  // 2+ weeks since the PO was raised, no ETA back yet, order still open, and not already
+  // explained by drawings being in progress (that case is covered by the drawings card).
+  function isEtaOverdue(r) {
+    const wk = weeksNum(r['How many weeks since order']);
+    return isOpenStatus(r) && hasNoEtaYet(r) && wk !== null && wk >= 2 && !isAwaitingDrawings(r);
+  }
+  function hasNoDespatchDate(r) {
+    return !(r['Confirmed Shipping Date'] || '').trim();
+  }
+  // GenRock's factory-to-Perth lead time runs ~12-16 weeks, so two failure modes matter most:
+  // drawings still not done past 4 weeks eats straight into that buffer, and not yet shipped
+  // (still fabricating/awaiting drawings, i.e. hasn't reached "In Transit") past 8 weeks with
+  // no confirmed dispatch date leaves little runway before the job is late.
+  function criticalReason(r) {
+    if (!isOpenStatus(r)) return null;
+    const wk = weeksNum(r['How many weeks since order']);
+    if (wk === null) return null;
+    if (isAwaitingDrawings(r) && wk > 4) return 'drawings';
+    if (r.Status !== 'In Transit' && wk >= 8 && hasNoDespatchDate(r)) return 'despatch';
+    return null;
+  }
+  function isCritical(r) {
+    return criticalReason(r) !== null;
+  }
+
+  function counts() {
+    const c = { '__all__': records.length, '__open__': 0, 'Invoiced': 0, 'In Transit': 0, 'Currently Being Fabricated': 0, 'Awaiting Drawings': 0 };
+    records.forEach(r => {
+      if (isOpenStatus(r)) c['__open__']++;
+      if (r.Status === 'Invoiced') c['Invoiced']++;
+      else if (r.Status === 'In Transit') c['In Transit']++;
+      else if (r.Status === 'Currently Being Fabricated') c['Currently Being Fabricated']++;
+      else if (isAwaitingDrawings(r)) c['Awaiting Drawings']++;
+    });
+    document.getElementById('count-open').textContent = c['__open__'];
+    document.getElementById('count-all').textContent = c['__all__'];
+    document.getElementById('count-invoiced').textContent = c['Invoiced'];
+    document.getElementById('count-transit').textContent = c['In Transit'];
+    document.getElementById('count-fab').textContent = c['Currently Being Fabricated'];
+    document.getElementById('count-drawings').textContent = c['Awaiting Drawings'];
+  }
+
+  function parseDate(s) {
+    if (!s) return null;
+    const m = s.match(/^(\d{1,2}) (\w{3}) (\d{4})$/);
+    if (!m) return null;
+    const months = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+    const mi = months.indexOf(m[2]);
+    if (mi < 0) return null;
+    return new Date(parseInt(m[3],10), mi, parseInt(m[1],10)).getTime();
+  }
+
+  function escapeHtml(s) {
+    return (s || '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+  }
+
+  function jumpToRow(po) {
+    search.value = po;
+    activeStatus = '__all__';
+    chips.forEach(c => c.classList.toggle('active', c.dataset.status === '__all__'));
+    render();
+    requestAnimationFrame(() => {
+      const el = tbody.querySelector('tr[data-po="' + CSS.escape(po) + '"]');
+      if (el) {
+        el.scrollIntoView({ block: 'center', behavior: 'smooth' });
+        el.classList.add('row-target');
+        setTimeout(() => el.classList.remove('row-target'), 3300);
+      }
+    });
+  }
+
+  function renderAttention() {
+    const critical = records.filter(isCritical);
+    const etaNeeded = records.filter(isEtaOverdue);
+    const drawings = records.filter(isAwaitingDrawings);
+    const shipping = records.filter(isOpenWithShippingUpdate);
+    document.getElementById('criticalCount').textContent = critical.length;
+    document.getElementById('etaCount').textContent = etaNeeded.length;
+    document.getElementById('drawingsCount').textContent = drawings.length;
+    document.getElementById('shippingCount').textContent = shipping.length;
+
+    const cList = document.getElementById('criticalList');
+    cList.innerHTML = critical.length ? critical.map(r => {
+      const reason = criticalReason(r);
+      const wk = weeksNum(r['How many weeks since order']);
+      const flagText = (reason === 'drawings' ? STR.criticalDrawingsFlag[lang] : STR.criticalDespatchFlag[lang]).replace('{w}', wk);
+      return '<li data-po="' + escapeHtml(r['PO Number']) + '">' +
+        '<span class="attn-row1"><span class="attn-po">' + escapeHtml(r['PO Number']) + '</span>' +
+        '<span class="attn-flag warn">' + escapeHtml(flagText) + '</span></span>' +
+        '<span class="attn-detail">' + escapeHtml(r.Client) + ' — ' + escapeHtml(r.Items) + '</span>' +
+      '</li>';
+    }).join('') : '<li class="attn-empty" style="border-top:none;cursor:default;" data-i18n="attnEmptyCritical">' + STR.attnEmptyCritical[lang] + '</li>';
+
+    const eList = document.getElementById('etaList');
+    eList.innerHTML = etaNeeded.length ? etaNeeded.map(r =>
+      '<li data-po="' + escapeHtml(r['PO Number']) + '">' +
+        '<span class="attn-row1"><span class="attn-po">' + escapeHtml(r['PO Number']) + '</span>' +
+        '<span class="attn-flag warn">' + escapeHtml(r['How many weeks since order']) + '</span></span>' +
+        '<span class="attn-detail">' + escapeHtml(r.Client) + ' — ' + escapeHtml(r.Items) + '</span>' +
+      '</li>'
+    ).join('') : '<li class="attn-empty" style="border-top:none;cursor:default;" data-i18n="attnEmptyEta">' + STR.attnEmptyEta[lang] + '</li>';
+
+    const dList = document.getElementById('drawingsList');
+    dList.innerHTML = drawings.length ? drawings.map(r =>
+      '<li data-po="' + escapeHtml(r['PO Number']) + '">' +
+        '<span class="attn-row1"><span class="attn-po">' + escapeHtml(r['PO Number']) + '</span>' +
+        '<span class="attn-flag' + (r['How many weeks since order'] && r['How many weeks since order'].indexOf('OVERDUE') === 0 ? ' warn' : '') + '">' + escapeHtml(r['How many weeks since order']) + '</span></span>' +
+        '<span class="attn-detail">' + escapeHtml(r.Client) + ' — ' + escapeHtml(r.Items) + '</span>' +
+      '</li>'
+    ).join('') : '<li class="attn-empty" style="border-top:none;cursor:default;" data-i18n="attnEmptyDrawings">' + STR.attnEmptyDrawings[lang] + '</li>';
+
+    const sList = document.getElementById('shippingList');
+    sList.innerHTML = shipping.length ? shipping.map(r =>
+      '<li data-po="' + escapeHtml(r['PO Number']) + '">' +
+        '<span class="attn-row1"><span class="attn-po">' + escapeHtml(r['PO Number']) + '</span></span>' +
+        '<span class="attn-detail">' + escapeHtml(r.Client) + ' — ' + escapeHtml(r['Confirmed Shipping Date']) + '</span>' +
+      '</li>'
+    ).join('') : '<li class="attn-empty" style="border-top:none;cursor:default;" data-i18n="attnEmptyShipping">' + STR.attnEmptyShipping[lang] + '</li>';
+
+    Array.from(document.querySelectorAll('.attn-list li[data-po]')).forEach(li => {
+      li.addEventListener('click', () => jumpToRow(li.getAttribute('data-po')));
+    });
+  }
+
+  function render() {
+    const q = search.value.trim().toLowerCase();
+    let rows = records.filter(r => {
+      if (activeStatus === '__open__') {
+        if (!isOpenStatus(r)) return false;
+      } else if (activeStatus !== '__all__') {
+        if (activeStatus === 'Awaiting Drawings') {
+          if (!isAwaitingDrawings(r)) return false;
+        } else if (r.Status !== activeStatus) return false;
+      }
+      if (!q) return true;
+      const hay = [r['PO Number'], r['Reference '], r.Client, r.Items, r['PFE Notes']].join(' ').toLowerCase();
+      return hay.indexOf(q) !== -1;
+    });
+
+    rows = rows.slice().sort((a, b) => {
+      const da = parseDate(a.Date) || 0, db = parseDate(b.Date) || 0;
+      return (da - db) * sortDir;
+    });
+
+    tbody.innerHTML = rows.map(r => {
+      const sMeta = statusMeta[r.Status] || ['st-wait', 'st-wait-bg'];
+      const isOverdue = r['How many weeks since order'] && r['How many weeks since order'].indexOf('OVERDUE') === 0;
+      const rowClass = isCritical(r) ? 'flag-critical' : (isAwaitingDrawings(r) ? 'flag-drawings' : (isOpenWithShippingUpdate(r) ? 'flag-shipping' : ''));
+
+      let etaCell = escapeHtml(r['PFE ETA']) || '—';
+      if (isAwaitingDrawings(r)) {
+        etaCell += '<span class="eta-flag" title="' + STR.etaProvisionalTip[lang] + '">' + STR.etaProvisionalBadge[lang] + '</span>';
+      } else if (isEtaOverdue(r)) {
+        etaCell += '<span class="eta-flag warn" title="' + STR.etaOverdueTip[lang] + '">' + STR.etaOverdueBadge[lang] + '</span>';
+      }
+
+      return '<tr class="' + rowClass + '" data-po="' + escapeHtml(r['PO Number']) + '">' +
+        '<td class="num"><strong>' + escapeHtml(r['PO Number']) + '</strong></td>' +
+        '<td class="num">' + escapeHtml(r.Date) + '</td>' +
+        '<td class="weeks' + (isOverdue ? ' overdue' : '') + '">' + escapeHtml(r['How many weeks since order']) + '</td>' +
+        '<td><span class="pill" title="' + escapeHtml(statusLabelFull(r.Status)) + '" style="color:var(--' + sMeta[0] + ');background:var(--' + sMeta[1] + ')">' + escapeHtml(statusLabel(r.Status)) + '</span></td>' +
+        '<td class="num">' + etaCell + '</td>' +
+        '<td class="num">' + escapeHtml(r['Client Expected Delivery Date']) + '</td>' +
+        '<td class="notes-cell" title="' + escapeHtml(r['Confirmed Shipping Date']) + '">' + escapeHtml(r['Confirmed Shipping Date']) + '</td>' +
+        '<td>' + escapeHtml(r.Client) + '</td>' +
+        '<td class="items-cell" title="' + escapeHtml(r.Items) + '">' + escapeHtml(r.Items) + '</td>' +
+        '<td class="muted">' + escapeHtml(r['Reference ']) + '</td>' +
+        '<td class="notes-cell" title="' + escapeHtml(r['PFE Notes']) + '">' + escapeHtml(r['PFE Notes']) + '</td>' +
+        '<td class="num">' + escapeHtml(r['Date Invoiced']) + '</td>' +
+        '</tr>';
+    }).join('');
+
+    emptyState.style.display = rows.length ? 'none' : 'block';
+  }
+
+  function applyStaticStrings() {
+    document.documentElement.lang = lang === 'zh' ? 'zh-CN' : 'en';
+    Array.from(document.querySelectorAll('[data-i18n]')).forEach(el => {
+      const key = el.getAttribute('data-i18n');
+      if (STR[key]) el.textContent = STR[key][lang];
+    });
+    if (STR.searchPlaceholder) search.setAttribute('placeholder', STR.searchPlaceholder[lang]);
+    const rc = records.length;
+    document.getElementById('footerRight').textContent = lang === 'zh'
+      ? ('显示完整采购单跟踪表中的 ' + rc + ' 个 PFE 订单')
+      : (rc + ' PFE orders shown of full PO Tracker');
+  }
+
+  document.querySelectorAll('.lang-toggle button').forEach(btn => {
+    btn.addEventListener('click', () => {
+      lang = btn.dataset.lang;
+      document.querySelectorAll('.lang-toggle button').forEach(b => b.setAttribute('aria-selected', String(b === btn)));
+      applyStaticStrings();
+      renderAttention();
+      render();
+    });
+  });
+
+  chips.forEach(chip => chip.addEventListener('click', () => {
+    chips.forEach(c => c.classList.remove('active'));
+    chip.classList.add('active');
+    activeStatus = chip.dataset.status;
+    render();
+  }));
+
+  search.addEventListener('input', render);
+
+  const dateHeader = document.querySelector('th.sortable');
+  dateHeader.addEventListener('click', function () {
+    sortDir = sortDir * -1;
+    this.classList.add('sorted');
+    this.querySelector('.arrow').textContent = sortDir === 1 ? '▴' : '▾';
+    render();
+  });
+  dateHeader.classList.add('sorted');
+  dateHeader.querySelector('.arrow').textContent = '▴';
+
+  applyStaticStrings();
+  counts();
+  renderAttention();
+  render();
+})();
+</script>
