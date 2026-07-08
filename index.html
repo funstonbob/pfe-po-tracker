@@ -228,6 +228,22 @@
   .chip.active { background: var(--accent); border-color: var(--accent); color: #fff; }
   .chip .n { opacity: 0.75; font-weight: 500; margin-left: 3px; }
 
+  .toolbar-spacer { flex: 1 1 auto; min-width: 0; }
+  .export-btn {
+    padding: 6px 12px;
+    border-radius: 8px;
+    border: 1px solid var(--accent);
+    background: transparent;
+    color: var(--accent);
+    font-size: 12.5px;
+    font-weight: 600;
+    cursor: pointer;
+    white-space: nowrap;
+    font-family: inherit;
+  }
+  .export-btn:hover { background: var(--accent); color: #fff; }
+  .export-note { margin: 0 0 14px; font-size: 11.5px; color: var(--text-muted); }
+
   .table-card {
     background: var(--surface);
     border: 1px solid var(--border);
@@ -403,7 +419,11 @@
     <button class="chip" data-status="In Transit"><span data-i18n="chipTransit">In Transit</span> <span class="n" id="count-transit"></span></button>
     <button class="chip" data-status="Currently Being Fabricated"><span data-i18n="chipFab">Fabricating</span> <span class="n" id="count-fab"></span></button>
     <button class="chip" data-status="Awaiting Drawings"><span data-i18n="chipDrawings">Awaiting Drawings</span> <span class="n" id="count-drawings"></span></button>
+    <span class="toolbar-spacer"></span>
+    <button class="export-btn" id="exportHtmlBtn" type="button" title="Excludes Invoiced/Cancelled orders">⭳ <span data-i18n="exportHtml">Save as HTML</span></button>
+    <button class="export-btn" id="exportCsvBtn" type="button" title="Excludes Invoiced/Cancelled orders">⭳ <span data-i18n="exportCsv">Save as Excel</span></button>
   </div>
+  <p class="export-note" data-i18n="exportNote">Exports include open orders only — invoiced/cancelled history is left out.</p>
 
   <div class="table-card">
     <div class="table-scroll">
@@ -475,6 +495,9 @@
     chipTransit: { en: 'In Transit', zh: '运输中' },
     chipFab: { en: 'Fabricating', zh: '生产中' },
     chipDrawings: { en: 'Awaiting Drawings', zh: '等待图纸' },
+    exportHtml: { en: 'Save as HTML', zh: '另存为 HTML' },
+    exportCsv: { en: 'Save as Excel', zh: '另存为 Excel' },
+    exportNote: { en: 'Exports include open orders only — invoiced/cancelled history is left out.', zh: '导出内容仅包含未结订单——已开票/已取消的历史订单不包含在内。' },
     cardCriticalTitle: { en: 'Critical', zh: '紧急' },
     cardCriticalSub: { en: '4+ weeks with no drawings, or 8+ weeks not yet shipped with no dispatch date', zh: '图纸超过4周未完成，或超过8周仍未发货且无确认发货日期' },
     attnEmptyCritical: { en: 'Nothing critical right now.', zh: '目前没有紧急事项。' },
@@ -770,6 +793,56 @@
   }));
 
   search.addEventListener('input', render);
+
+  function todayStamp() {
+    const d = new Date();
+    const p = n => String(n).padStart(2, '0');
+    return d.getFullYear() + '-' + p(d.getMonth() + 1) + '-' + p(d.getDate());
+  }
+
+  function downloadBlob(content, filename, mime) {
+    const blob = new Blob([content], { type: mime });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = filename;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    setTimeout(() => URL.revokeObjectURL(url), 1000);
+  }
+
+  // Exports always exclude Invoiced/Cancelled rows (the "history"), regardless of
+  // whatever filter chip happens to be active on screen when the button is clicked.
+  const EXPORT_COLS = ['PO Number', 'Date', 'How many weeks since order', 'Status', 'PFE ETA',
+    'Client Expected Delivery Date', 'Confirmed Shipping Date', 'Client', 'Items', 'Reference ', 'PFE Notes', 'Date Invoiced'];
+
+  document.getElementById('exportCsvBtn').addEventListener('click', () => {
+    const openRecords = records.filter(isOpenStatus);
+    const csvEscape = v => '"' + String(v || '').replace(/"/g, '""') + '"';
+    const lines = [EXPORT_COLS.map(c => csvEscape(c.trim())).join(',')]
+      .concat(openRecords.map(r => EXPORT_COLS.map(c => csvEscape(r[c])).join(',')));
+    // Leading BOM (escaped, not a literal character) so Excel reliably detects UTF-8.
+    const bom = String.fromCharCode(0xFEFF);
+    downloadBlob(bom + lines.join('\r\n'), 'PFE_PO_Tracker_open_' + todayStamp() + '.csv', 'text/csv;charset=utf-8;');
+  });
+
+  document.getElementById('exportHtmlBtn').addEventListener('click', () => {
+    const openRecords = records.filter(isOpenStatus);
+    const originalJson = document.getElementById('po-data').textContent;
+    const filteredJson = JSON.stringify(openRecords);
+    let snapshotHtml = '<!DOCTYPE html>\n' + document.documentElement.outerHTML.replace(originalJson, filteredJson);
+    // The header's "N orders on file" figure is baked-in static text (not recomputed by
+    // the script on load like the footer count is) — patch it to the exported total so a
+    // downloaded snapshot doesn't misleadingly show the full unfiltered dataset size.
+    snapshotHtml = snapshotHtml.replace(/(<strong id="rowCount">)\d+(<\/strong>)/, '$1' + openRecords.length + '$2');
+    // A downloaded snapshot won't auto-refresh itself — say so instead of the live-page copy.
+    snapshotHtml = snapshotHtml.replace(
+      "autoRefresh: { en: 'Refreshes automatically each morning', zh: '每天早上自动更新' },",
+      "autoRefresh: { en: 'Snapshot export — not live, open orders only', zh: '快照导出——非实时，仅含未结订单' },"
+    );
+    downloadBlob(snapshotHtml, 'PFE_PO_Tracker_open_' + todayStamp() + '.html', 'text/html;charset=utf-8;');
+  });
 
   const dateHeader = document.querySelector('th.sortable');
   dateHeader.addEventListener('click', function () {
